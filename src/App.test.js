@@ -1,8 +1,22 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders learn react link', () => {
+beforeAll(() => {
+  // jsdom has no canvas; the pixel scene only needs a no-op context in tests
+  HTMLCanvasElement.prototype.getContext = () => ({
+    fillRect() {},
+    clearRect() {},
+    drawImage() {},
+    save() {},
+    restore() {},
+    translate() {},
+    getImageData: () => ({ data: new Uint8ClampedArray(192 * 144 * 4) }),
+    putImageData() {},
+  });
+});
+
+test('renders the twin page with suggested questions', () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  expect(screen.getByText(/tell me about projects/i)).toBeInTheDocument();
+  expect(screen.getByLabelText(/ask astrid's digital twin/i)).toBeInTheDocument();
 });
