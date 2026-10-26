@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import './App.css';
-import Nav from './components/Nav';
+import SiteHeader from './components/SiteHeader';
 import TwinPage from './pages/TwinPage';
 import HomePage from './pages/HomePage';
 import ProjectsPage from './pages/ProjectsPage';
@@ -35,20 +35,17 @@ export default function App() {
   const path = useHashPath();
   const Page = routes[path] || TwinPage;
   return (
-    <div className="app">
-      <div className="crt" aria-hidden="true" />
-      <Nav path={path} />
-      <main className="page">
-        <Page />
-      </main>
-      <footer className="footer">
-        <span>designed & built by {person.name} ✦ {new Date().getFullYear()}</span>
-        <span className="footer-links">
-          <a href={`mailto:${person.email}`}>email</a>
-          <a href={person.linkedin} target="_blank" rel="noreferrer">linkedin</a>
-          <a href={person.github} target="_blank" rel="noreferrer">github</a>
+    <>
+      <SiteHeader path={path} />
+      <Page />
+      <footer className="pfoot">
+        <span>© {new Date().getFullYear()} {person.name}</span>
+        <span className="pfoot-links">
+          <a href={`mailto:${person.email}`}>Email</a>
+          <a href={person.linkedin} target="_blank" rel="noreferrer">LinkedIn</a>
+          <a href={person.github} target="_blank" rel="noreferrer">GitHub</a>
         </span>
       </footer>
-    </div>
+    </>
   );
 }

@@ -10,13 +10,13 @@ import { person, education, experience, projects, skills, passions } from '../da
 const API_URL = process.env.REACT_APP_TWIN_API_URL;
 
 export const suggestedQuestions = [
-  { id: 'projects', label: 'tell me about projects', zh: '你做过哪些项目？' },
-  { id: 'background', label: "what's your background?", zh: '你的背景是什么？' },
-  { id: 'passion', label: "what's your passion?", zh: '你热爱什么？' },
+  { id: 'projects', label: 'Tell me about projects', zh: '你做过哪些项目？' },
+  { id: 'background', label: "What's your background?", zh: '你的背景是什么？' },
+  { id: 'passion', label: "What's your passion?", zh: '你热爱什么？' },
 ];
 
 export const greeting = {
-  text: `Hi! I'm ${person.name.split(' ')[0]}'s digital twin ✦ Ask me anything about my work, projects, or what I'm up to. 你也可以用中文问我～`,
+  text: `Hi! I'm ${person.name.split(' ')[0]}'s digital twin. Ask me anything about my work, projects, or what I'm up to. 你也可以用中文问我。`,
   expression: 'smile',
 };
 

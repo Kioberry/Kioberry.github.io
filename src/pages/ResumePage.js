@@ -1,50 +1,45 @@
-import Window from '../components/Window';
 import { education, experience, person, projects, skills } from '../data/profile';
 
-// Put the PDF at public/resume.pdf; the download button points there.
+// Put the PDF at public/resume.pdf; the download link points there.
 const PDF = `${process.env.PUBLIC_URL}/resume.pdf`;
 
 export default function ResumePage() {
   return (
-    <div className="resume">
-      <Window
-        title="resume.pdf — Astrid Viewer 2000"
-        className="resume-win"
-        bodyClassName="resume-body"
-        actions={
-          <a className="win-action" href={PDF} download>
-            ⤓ download
+    <div className="pb-grid">
+      <main className="resume">
+        <p className="pb-lbl">Resume</p>
+        <h1 className="pb-h1">{person.name}</h1>
+        <p className="pb-more">
+          {person.email} · <a href={person.linkedin}>LinkedIn</a> · <a href={person.github}>GitHub</a> ·{' '}
+          <a href={PDF} download>
+            Download PDF
           </a>
-        }
-      >
-        <article className="paper">
-          <header className="paper-head">
-            <h1>{person.name}</h1>
-            <p>
-              {person.email} · <a href={person.linkedin}>linkedin.com/in/wanrong-astrid-xie</a> ·{' '}
-              <a href={person.github}>github.com/Kioberry</a>
-            </p>
-          </header>
+        </p>
 
+        <section>
           <h2>Education</h2>
           {education.map((e) => (
-            <div className="paper-row" key={e.school}>
-              <div>
-                <b>{e.school}</b> · {e.degree} · {e.detail}
+            <div className="pb-item" key={e.school}>
+              <div className="pb-hd">
+                <span className="t">{e.school}</span>
+                <span className="y">{e.period}</span>
               </div>
-              <span>{e.period}</span>
+              <p>
+                {e.degree} · {e.detail}
+              </p>
             </div>
           ))}
+        </section>
 
+        <section>
           <h2>Experience</h2>
           {experience.map((x) => (
-            <div key={x.company} className="paper-block">
-              <div className="paper-row">
-                <div>
-                  <b>{x.company}</b> · {x.role}
-                </div>
-                <span>{x.period}</span>
+            <div className="pb-item" key={x.company}>
+              <div className="pb-hd">
+                <span className="t">{x.company}</span>
+                <span className="y">{x.period}</span>
               </div>
+              <p className="role">{x.role}</p>
               <ul>
                 {x.bullets.map((b) => (
                   <li key={b}>{b}</li>
@@ -52,30 +47,33 @@ export default function ResumePage() {
               </ul>
             </div>
           ))}
+        </section>
 
+        <section>
           <h2>Projects</h2>
           {projects.slice(0, 5).map((p) => (
-            <div key={p.id} className="paper-block">
-              <div className="paper-row">
-                <div>
-                  <b>{p.title}</b> · {p.tags.join(', ')}
-                </div>
-                <span>{p.date}</span>
+            <div className="pb-item" key={p.id}>
+              <div className="pb-hd">
+                <span className="t">{p.title}</span>
+                <span className="y">{p.date}</span>
               </div>
-              <ul>
-                <li>{p.blurb}</li>
-              </ul>
+              <p>{p.blurb}</p>
             </div>
           ))}
+        </section>
 
+        <section>
           <h2>Skills</h2>
           {Object.entries(skills).map(([k, v]) => (
-            <p key={k} className="paper-skill">
-              <b>{k}:</b> {v}
-            </p>
+            <div className="pb-item" key={k}>
+              <div className="pb-hd">
+                <span className="t">{k}</span>
+              </div>
+              <p>{v}</p>
+            </div>
           ))}
-        </article>
-      </Window>
+        </section>
+      </main>
     </div>
   );
 }

@@ -12,9 +12,9 @@ export const person = {
 };
 
 export const highlights = [
-  { icon: '🎓', text: 'M.S. computer science @ USC' },
-  { icon: '⚙️', text: 'SoC modeling intern @ SmartLogic' },
-  { icon: '🏆', text: '1st place, USC Build4SC hackathon' },
+  'M.S. computer science @ USC',
+  'SoC modeling intern @ SmartLogic',
+  '1st place, USC Build4SC hackathon',
 ];
 
 export const education = [
@@ -39,6 +39,7 @@ export const experience = [
     company: 'Shanghai SmartLogic Technology',
     role: 'SoC System Modeling Intern',
     period: 'May 2026 – Present',
+    years: '2026–now',
     bullets: [
       'Built TraceViewer end to end for SoC trace monitoring and replay, cutting initial diagnosis from 30 min to 5.',
       'Built a merge-request review agent + Daily Test workflow; bug-fix cycle went from 2 days to 5 minutes.',
@@ -50,6 +51,7 @@ export const experience = [
     company: 'Yimikang Technology Group',
     role: 'Software Engineer Intern, R&D',
     period: 'Jun 2024 – Aug 2024',
+    years: '2024',
     bullets: [
       'Led end-to-end deployment of a distributed edge data collection system in Go (device → gateway → backend).',
       'Built a data-center cooling simulator for ML optimization, cutting peak energy use by 20%.',
@@ -61,6 +63,7 @@ export const experience = [
     company: 'China Mobile Payment',
     role: 'Software Engineer Intern, Platform & Security',
     period: 'Jun 2022 – Aug 2022',
+    years: '2022',
     bullets: [
       'Architected a stateless auth microservice on Spring Boot + MySQL that handled a 3x traffic increase.',
       'Implemented dual-token JWT auth with Redis-backed refresh tokens and BCrypt hashing.',

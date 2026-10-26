@@ -1,19 +1,14 @@
-import Window from '../components/Window';
-
 export default function LifePage() {
   return (
-    <div className="life">
-      <Window title="life/ — access denied" bodyClassName="life-body">
-        <div className="life-lock">🔒</div>
-        <h1>loading life.exe …</h1>
-        <div className="life-bar">
-          <i />
-        </div>
-        <p className="muted">photos, travel, and the off-screen stuff are coming soon ✦</p>
-        <a className="btn" href="#/">
-          ask my twin instead →
-        </a>
-      </Window>
+    <div className="pb-grid">
+      <main>
+        <p className="pb-lbl">Life</p>
+        <h1 className="pb-h1">Coming soon.</h1>
+        <p className="pb-dek">Photos, travel and the off-screen stuff will live here.</p>
+        <p className="pb-more">
+          <a href="#/">Ask my twin instead</a>
+        </p>
+      </main>
     </div>
   );
 }

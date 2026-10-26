@@ -1,93 +1,69 @@
-import TwinStage from '../components/TwinStage';
-import ProjectCard from '../components/ProjectCard';
-import Window from '../components/Window';
 import { education, experience, person, projects } from '../data/profile';
 
 export default function HomePage() {
   return (
-    <div className="home">
-      <section className="hero">
-        <div className="hero-avatar">
-          <TwinStage className="hero-canvas" expression="smile" />
-        </div>
-        <div className="hero-text">
-          <p className="eyebrow">hello world ✦ 你好</p>
-          <h1>
-            I'm {person.name.split(' ')[0]}
-            <span className="hero-zh">{person.nameZh}</span>
-          </h1>
-          <p className="hero-tag">{person.tagline}</p>
-          <p className="hero-meta">
-            M.S. CS @ USC · {person.location} · open to Applied AI / LLM / SWE roles
-          </p>
-          <div className="hero-cta">
-            <a className="btn" href="#/">
-              talk to my twin ✦
-            </a>
-            <a className="btn btn-ghost" href="#/resume">
-              resume
-            </a>
-          </div>
-        </div>
-      </section>
+    <div className="pb-grid">
+      <main>
+        <h1 className="pb-h1">Hi, I'm {person.name.split(' ')[0]}.</h1>
+        <p className="pb-dek">
+          AI engineer finishing my M.S. at USC. I build LLM agents, RAG pipelines and the systems that keep them
+          running in production.
+        </p>
+        <p className="pb-more">
+          <a href="#/">Talk to my digital twin</a>
+        </p>
 
-      <div className="home-grid">
-        <Window title="education.dat" className="edu">
-          <ul className="edu-list">
-            {education.map((e) => (
-              <li key={e.school}>
-                <div className="edu-badge">{e.school.includes('Southern') ? 'USC' : 'LDS'}</div>
-                <div>
-                  <h3>{e.school}</h3>
-                  <p>{e.degree}</p>
-                  <p className="muted">
-                    {e.detail} · {e.period}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </Window>
-
-        <Window title="experience.log" className="exp">
-          <ol className="timeline">
-            {experience.map((x) => (
-              <li key={x.company}>
-                <div className="tl-dot" />
-                <div className="tl-head">
-                  <h3>{x.role}</h3>
-                  <span className="muted">{x.period}</span>
-                </div>
-                <p className="tl-company">@ {x.company}</p>
-                <ul className="tl-bullets">
-                  {x.bullets.map((b) => (
-                    <li key={b}>{b}</li>
-                  ))}
-                </ul>
-                <div className="tags">
-                  {x.tags.map((t) => (
-                    <span key={t} className="tag">
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              </li>
-            ))}
-          </ol>
-        </Window>
-      </div>
-
-      <div className="section-head">
-        <h2>featured projects</h2>
-        <a href="#/projects">see all {projects.length} →</a>
-      </div>
-      <div className="cards">
-        {projects
-          .filter((p) => p.featured)
-          .map((p) => (
-            <ProjectCard key={p.id} project={p} />
+        <section id="education">
+          <h2>Education</h2>
+          {education.map((e) => (
+            <div className="pb-item" key={e.school}>
+              <div className="pb-hd">
+                <span className="t">{e.school}</span>
+                <span className="y">{e.period.replace(/[A-Za-z]{3} /g, '').replace(' – ', '–')}</span>
+              </div>
+              <p>
+                {e.degree} · {e.detail}
+              </p>
+            </div>
           ))}
-      </div>
+        </section>
+
+        <section id="work">
+          <h2>Work</h2>
+          {experience.map((x) => (
+            <div className="pb-item" key={x.company}>
+              <div className="pb-hd">
+                <span className="t">{x.company}</span>
+                <span className="y">{x.years}</span>
+              </div>
+              <p className="role">{x.role}</p>
+              <p>{x.bullets[0]}</p>
+            </div>
+          ))}
+        </section>
+
+        <section id="projects">
+          <p className="pb-lbl pb-grp">Selected projects</p>
+          {projects
+            .filter((p) => p.featured)
+            .map((p) => (
+              <div className="pb-item" key={p.id}>
+                <div className="pb-hd">
+                  <a className="t" href={p.linkedin} target="_blank" rel="noreferrer">
+                    {p.title}
+                  </a>
+                  <span className="y">{p.date.slice(-4)}</span>
+                </div>
+                <p>
+                  {p.blurb} <a href={p.linkedin} target="_blank" rel="noreferrer">linkedin</a>
+                </p>
+              </div>
+            ))}
+          <p className="pb-older">
+            <a href="#/projects">All {projects.length} projects</a>
+          </p>
+        </section>
+      </main>
     </div>
   );
 }
