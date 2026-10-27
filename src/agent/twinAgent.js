@@ -3,22 +3,31 @@
 // Prototype: a keyword router over src/data/profile.js so the UI works with no backend.
 // Production: set REACT_APP_TWIN_API_URL to a serverless endpoint (e.g. a Cloudflare Worker
 // that calls the Claude API with your uploaded documents as context). The UI only depends on
-// askTwin()'s contract: (question, history) => Promise<{ text, expression }>.
+// askTwin()'s contract: (question, history) => Promise<{ text, expression, followups }>.
 
 import { person, education, experience, projects, skills, passions } from '../data/profile';
 
 const API_URL = process.env.REACT_APP_TWIN_API_URL;
 
-export const suggestedQuestions = [
-  { id: 'projects', label: 'Tell me about projects', zh: '你做过哪些项目？' },
-  { id: 'background', label: "What's your background?", zh: '你的背景是什么？' },
-  { id: 'passion', label: "What's your passion?", zh: '你热爱什么？' },
+// Short, Petersen-style prompts. The first three show before anything is asked; after each answer
+// the twin suggests three follow-ups the visitor hasn't asked yet.
+const QUESTION_POOL = [
+  'Favorite project?',
+  "What's your background?",
+  'What drives you?',
+  'What are you working on now?',
+  "What's your tech stack?",
+  'Tell me about DayPilot',
+  'How did you win the hackathon?',
+  'How do I reach you?',
 ];
 
-export const greeting = {
-  text: `Hi! I'm ${person.name.split(' ')[0]}'s digital twin. Ask me anything about my work, projects, or what I'm up to. 你也可以用中文问我。`,
-  expression: 'smile',
-};
+export const suggestedQuestions = QUESTION_POOL.slice(0, 3);
+
+export function pickFollowups(asked) {
+  const fresh = QUESTION_POOL.filter((q) => !asked.includes(q));
+  return (fresh.length >= 3 ? fresh : QUESTION_POOL).slice(0, 3);
+}
 
 export async function askTwin(question, history = []) {
   if (API_URL) {
@@ -39,7 +48,7 @@ const isZh = (s) => /[一-鿿]/.test(s);
 const intents = [
   {
     id: 'projects',
-    match: /project|built|build|作品|项目|做过/i,
+    match: /project|built|build|favorite|作品|项目|做过/i,
     en: () =>
       `My favorites right now: ${projects
         .filter((p) => p.featured)
@@ -101,6 +110,10 @@ function mockAnswer(question) {
   const project = projects.find((p) => question.toLowerCase().includes(p.title.toLowerCase().split(' ')[0]));
   if (project) {
     return { text: `${project.title}: ${project.blurb}`, expression: 'smile' };
+  }
+  if (/hackathon|peeko|黑客松/i.test(question)) {
+    const peeko = projects.find((p) => p.id === 'peeko');
+    return { text: `${peeko.title} won 1st place at USC Build4SC. ${peeko.blurb}`, expression: 'smile' };
   }
   const intent = intents.find((i) => i.match.test(question));
   if (intent) {

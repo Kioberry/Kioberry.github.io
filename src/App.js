@@ -1,20 +1,22 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 import SiteHeader from './components/SiteHeader';
-import TwinPage from './pages/TwinPage';
 import HomePage from './pages/HomePage';
+import AboutPage from './pages/AboutPage';
 import ProjectsPage from './pages/ProjectsPage';
 import ResumePage from './pages/ResumePage';
 import LifePage from './pages/LifePage';
+import LabPage from './pages/LabPage';
 import { person } from './data/profile';
 
 // Hash routing keeps GitHub Pages happy (no server rewrites needed).
 const routes = {
-  '/': TwinPage,
-  '/home': HomePage,
+  '/': HomePage,
+  '/about': AboutPage,
   '/projects': ProjectsPage,
   '/resume': ResumePage,
   '/life': LifePage,
+  '/lab': LabPage,
 };
 
 function useHashPath() {
@@ -33,7 +35,11 @@ function useHashPath() {
 
 export default function App() {
   const path = useHashPath();
-  const Page = routes[path] || TwinPage;
+  const Page = routes[path] || HomePage;
+  // the landing page is always dark, like matthewpetersen.ca; the reading pages follow the theme
+  useEffect(() => {
+    document.body.classList.toggle('is-home', Page === HomePage);
+  }, [Page]);
   return (
     <>
       <SiteHeader path={path} />

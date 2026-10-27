@@ -15,8 +15,8 @@ beforeAll(() => {
   });
 });
 
-test('renders the twin page with suggested questions', () => {
+test('renders the home page with suggested questions', () => {
   render(<App />);
-  expect(screen.getByText(/tell me about projects/i)).toBeInTheDocument();
+  expect(screen.getByText(/favorite project/i)).toBeInTheDocument();
   expect(screen.getByLabelText(/ask astrid's digital twin/i)).toBeInTheDocument();
 });

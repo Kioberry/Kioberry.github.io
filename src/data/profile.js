@@ -74,6 +74,7 @@ export const experience = [
 
 // `category` drives the filter chips on the projects page.
 // `linkedin` should point at the LinkedIn post for each project; the profile URL is a placeholder.
+// `thumb` (optional): an image file name in public/projects/, e.g. thumb: 'daypilot.png'. 16:10 works best.
 export const projects = [
   {
     id: 'daypilot',
