@@ -53,30 +53,30 @@ const intents = [
       `My favorites right now: ${projects
         .filter((p) => p.featured)
         .map((p) => `${p.title} (${p.subtitle})`)
-        .join(', ')}. DayPilot is my flagship, a production agent with long-term memory and full tracing. Want details on one?`,
+        .join(', ')}. DayPilot plans your day from your calendar, location and health data; LabMind turns microscopy into next-step lab decisions. Want details on one?`,
     zh: () =>
-      `最近最喜欢的项目是 DayPilot（部署在 Cloud Run 上的日程管理智能体）、Peeko（黑客松第一名，实时课堂总结 + RAG）和 PokerBench（用 QLoRA 微调小模型，打败了 GPT-4o）。想听哪个细节？`,
+      `最近最喜欢的项目是 DayPilot（结合日历、位置和健康数据帮你排一天的日程智能体）、LabMind（把显微图像变成下一步实验决策的智能体）和 Peeko（黑客松第一名，走神后一键追上课堂）。想听哪个细节？`,
     expression: 'smile',
   },
   {
     id: 'background',
     match: /background|education|school|study|usc|leeds|背景|学历|学校|教育/i,
     en: () =>
-      `I'm doing my ${education[0].degree} at USC (${education[0].detail}), after a ${education[1].degree} at Leeds. Before that I interned in payments security, distributed edge systems, and now SoC performance tooling, so I like moving between layers.`,
+      `I'm doing my ${education[0].degree} at USC (${education[0].detail}), graduating Dec 2026, after a ${education[1].degree} at Leeds. I've worked on payments security, distributed edge systems, SoC performance tooling and, most recently, production AI agents, so I like moving between layers.`,
     zh: () =>
-      `我现在在 USC 读计算机硕士（GPA 3.85），本科是英国利兹大学计算机一等学位。实习做过支付安全、分布式边缘系统，现在在做 SoC 性能分析工具，喜欢在系统的不同层之间切换。`,
+      `我现在在 USC 读计算机硕士（GPA 3.85），2026 年 12 月毕业；本科是英国利兹大学计算机一等学位。做过支付安全、分布式边缘系统、SoC 性能分析工具，最近在做生产环境的 AI 智能体，喜欢在系统的不同层之间切换。`,
     expression: 'smile',
   },
   {
     id: 'experience',
     match: /work|intern|job|experience|company|实习|工作|经历/i,
     en: () =>
-      `Most recently: ${experience[0].role} at ${experience[0].company}, where I built TraceViewer and an MR review agent that took bug-fix turnaround from 2 days to 5 minutes. Before that: ${experience
+      `Most recently: ${experience[0].role} at ${experience[0].company}, where I built a Gemini payroll agent that raised timecard recognition accuracy from 71.4% to 98.1%. Before that I was at ${experience
         .slice(1)
         .map((e) => e.company)
-        .join(' and ')}.`,
+        .join(', ')}.`,
     zh: () =>
-      `最近在上海 SmartLogic 做 SoC 建模实习：做了 TraceViewer，还有一个 MR 代码审查智能体，把修 bug 周期从 2 天缩到 5 分钟。之前在亿米康和中国移动支付实习过。`,
+      `最近在 Mulholland 做 Applied AI Engineer：做了一个 Gemini 工资单智能体，把考勤卡识别准确率从 71.4% 提到 98.1%。之前在上海 SmartLogic（SoC 建模）、亿米康和中国移动支付实习过。`,
     expression: 'smile',
   },
   {
@@ -107,7 +107,8 @@ const intents = [
 
 function mockAnswer(question) {
   const zh = isZh(question);
-  const project = projects.find((p) => question.toLowerCase().includes(p.title.toLowerCase().split(' ')[0]));
+  const q = question.toLowerCase();
+  const project = projects.find((p) => q.includes(p.title.toLowerCase()) || q.includes(p.id));
   if (project) {
     return { text: `${project.title}: ${project.blurb}`, expression: 'smile' };
   }

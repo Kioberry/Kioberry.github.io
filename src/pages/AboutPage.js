@@ -1,14 +1,17 @@
-import { education, experience, person, projects } from '../data/profile';
+import ProjectLinks from '../components/ProjectLinks';
+import { currently, education, experience, person, projects } from '../data/profile';
 
 export default function AboutPage() {
   return (
     <div className="pb-grid">
       <main>
         <h1 className="pb-h1">Hi, I'm {person.name.split(' ')[0]}.</h1>
-        <p className="pb-dek">
-          AI engineer finishing my M.S. at USC. I build LLM agents, RAG pipelines and the systems that keep them
-          running in production.
-        </p>
+        <p className="pb-dek">{person.intro.replace(/^I'm Astrid, /, "I'm ")}</p>
+        <ul className="pb-now">
+          {currently.map((c) => (
+            <li key={c}>{c}</li>
+          ))}
+        </ul>
         <p className="pb-more">
           <a href="#/">Talk to my digital twin</a>
         </p>
@@ -49,14 +52,11 @@ export default function AboutPage() {
             .map((p) => (
               <div className="pb-item" key={p.id}>
                 <div className="pb-hd">
-                  <a className="t" href={p.linkedin} target="_blank" rel="noreferrer">
-                    {p.title}
-                  </a>
+                  <span className="t">{p.title}</span>
                   <span className="y">{p.date.slice(-4)}</span>
                 </div>
-                <p>
-                  {p.blurb} <a href={p.linkedin} target="_blank" rel="noreferrer">linkedin</a>
-                </p>
+                <p>{p.blurb}</p>
+                <ProjectLinks links={p.links} />
               </div>
             ))}
           <p className="pb-older">
