@@ -1,57 +1,26 @@
-/* Layout and type follow felixrieseberg.com's plain pages: one 660px reading column, Literata for titles,
-   Fira Sans for prose, Fira Code for dates and labels, hairline rules between items.
-   The twin's ASCII screen is always a dark "screen", whatever the page theme. */
+/* One dark palette for every page, matching the twin's teal ASCII screen. Silkscreen (--pixel) sets the
+   nav and page titles; Literata, Fira Sans and Fira Code carry the reading text. */
 
 :root {
-  color-scheme: light;
-  --ground: #f7f5ef;
-  --sheet: #efece3;
-  --ink: #17160f;
-  --soft: #403e35;
-  --muted: #6a675c;
-  --rule: rgba(23, 22, 15, 0.13);
-  --accent: #0b6b78;
+  color-scheme: dark;
+  --ground: #0d0d0f;
+  --sheet: #17171a;
+  --ink: #ece8dd;
+  --soft: #cbc6b8;
+  --muted: #8f8c96;
+  --rule: rgba(236, 232, 221, 0.13);
+  --accent: #5fd4e0;
+  --accent-dim: rgba(95, 212, 224, 0.35);
+  --title: #f2f0ea;
   --portrait-ink: #cdeee9;
   --portrait-glow: rgba(95, 212, 224, 0.35);
   --display: 'Archivo', 'Arial Narrow', system-ui, sans-serif;
   --serif: 'Literata', Georgia, 'Times New Roman', serif;
   --body: 'Fira Sans', 'Helvetica Neue', Arial, sans-serif;
   --mono: 'Fira Code', ui-monospace, Menlo, monospace;
+  --pixel: 'Silkscreen', monospace;
+  --term: 'VT323', var(--mono);
   --wrap: 1180px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    color-scheme: dark;
-    --ground: #12110e;
-    --sheet: #1b1a16;
-    --ink: #ece8dd;
-    --soft: #cbc6b8;
-    --muted: #949085;
-    --rule: rgba(236, 232, 221, 0.13);
-    --accent: #5fd4e0;
-  }
-}
-
-:root[data-theme='dark'] {
-  color-scheme: dark;
-  --ground: #12110e;
-  --sheet: #1b1a16;
-  --ink: #ece8dd;
-  --soft: #cbc6b8;
-  --muted: #949085;
-  --rule: rgba(236, 232, 221, 0.13);
-  --accent: #5fd4e0;
-}
-
-/* the landing page is always dark; .home-dark (below) carries the same tokens for the lab previews */
-body.is-home {
-  color-scheme: dark;
-  --ground: #0d0d0f;
-  --ink: #ece8dd;
-  --muted: #8f8c96;
-  --rule: rgba(236, 232, 221, 0.13);
-  --accent: #5fd4e0;
 }
 
 * {
@@ -106,8 +75,10 @@ button {
 }
 
 .site nav a {
-  font-family: var(--mono);
-  font-size: 14px;
+  font-family: var(--pixel);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--muted);
   text-decoration: none;
   padding: 4px 8px;
@@ -116,31 +87,14 @@ button {
 
 .site nav a:hover,
 .site nav a[aria-current='page'] {
-  color: var(--ink);
+  color: var(--accent);
+  text-shadow: 0 0 10px var(--accent-dim);
 }
 
 .site nav a[aria-current='page'] {
   text-decoration: underline;
   text-underline-offset: 5px;
   text-decoration-color: var(--accent);
-}
-
-.themeb {
-  position: absolute;
-  right: clamp(16px, 4vw, 52px);
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  color: var(--muted);
-  background: none;
-  border: 1px solid var(--rule);
-  border-radius: 3px;
-}
-
-.themeb:hover {
-  color: var(--ink);
 }
 
 /* ---------- reading column ---------- */
@@ -178,16 +132,19 @@ button {
   font-size: 11px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--accent);
 }
 
 .pb-h1 {
   margin: 0;
-  font-family: var(--serif);
+  font-family: var(--pixel);
   font-weight: 700;
-  font-size: clamp(30px, 4.2vw, 46px);
-  line-height: 1.12;
-  letter-spacing: -0.012em;
+  font-size: clamp(28px, 4.4vw, 50px);
+  line-height: 1.08;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--title);
+  text-shadow: 0 0 22px var(--accent-dim);
   text-wrap: balance;
 }
 
@@ -230,10 +187,13 @@ main section {
 
 main h2 {
   margin: 0 0 10px;
-  font-family: var(--body);
-  font-weight: 700;
-  font-size: 22px;
+  font-family: var(--pixel);
+  font-weight: 400;
+  font-size: 18px;
   line-height: 1.25;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
 }
 
 .pb-grp {
@@ -357,8 +317,8 @@ main h2 {
 
 .chip:hover:not(:disabled),
 .chip[aria-selected='true'] {
-  color: var(--ink);
-  border-color: var(--ink);
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .chip:disabled {
@@ -458,20 +418,10 @@ main h2 {
 }
 
 .home-dark {
-  color-scheme: dark;
-  --ground: #0d0d0f;
-  --sheet: #17171a;
-  --ink: #ece8dd;
-  --soft: #cbc6b8;
-  --muted: #8f8c96;
-  --rule: rgba(236, 232, 221, 0.13);
-  --accent: #5fd4e0;
   --panel: #111113;
   --panel-line: #2b2b30;
   --key: #18181b;
   --key-text: #c4c2cc;
-  --pixel: 'Silkscreen', monospace;
-  --term: 'VT323', var(--mono);
   background: var(--ground);
   color: var(--ink);
 }
@@ -499,31 +449,24 @@ main h2 {
   font-weight: 700;
   line-height: 0.82;
   text-transform: uppercase;
-  color: #f2f0ea;
-  letter-spacing: 0.02em;
-}
-
-.tw-name-sm {
-  font-size: clamp(32px, 8cqw, 96px);
-}
-
-.tw-name-lg {
-  font-size: clamp(72px, 19cqw, 240px);
+  color: var(--title);
 }
 
 .tw-name-line {
-  font-size: clamp(40px, 9.5cqw, 128px);
+  font-size: clamp(36px, 8.6cqw, 104px);
+  letter-spacing: 0.04em;
   white-space: nowrap;
+}
+
+.hl-petersen .tw-name {
+  margin-top: clamp(16px, 4cqw, 48px);
 }
 
 .font-press .tw-name {
   line-height: 1.05;
 }
-.font-press .tw-name-lg {
-  font-size: clamp(60px, 15cqw, 190px);
-}
 .font-press .tw-name-line {
-  font-size: clamp(30px, 7cqw, 90px);
+  font-size: clamp(26px, 6cqw, 76px);
 }
 
 .tw-portrait {
@@ -787,62 +730,345 @@ main h2 {
   transform: translateX(22px);
 }
 
-/* layout 3: the portrait sits over a giant name */
-.hl-stage {
+/* ---------- immersive home candidates (shown in #/lab) ---------- */
+
+.cx {
+  --px: 0;
+  --py: 0;
+  isolation: isolate;
+  min-height: clamp(780px, 100vh, 980px);
+  padding: clamp(28px, 5cqw, 56px) clamp(16px, 3cqw, 40px) 28px;
+  background: radial-gradient(ellipse 80% 60% at 50% 55%, #0b1a1d 0%, var(--ground) 72%);
+}
+
+.cx > * {
   position: relative;
+  z-index: 1;
+}
+
+.cx > .cx-canvas,
+.cx > .cx-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.cx-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.cx-vignette {
+  pointer-events: none;
+  background: radial-gradient(ellipse 75% 70% at 50% 50%, transparent 50%, rgba(0, 0, 0, 0.8) 100%);
+}
+
+.cx-dock {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
+  margin-top: auto;
 }
 
-.hl-behind .tw-name {
-  position: absolute;
-  top: 6cqw;
-  color: #26262c;
+.cx .tw-a {
+  text-shadow: 0 1px 14px #000;
 }
 
-.hl-behind .tw-name-line {
-  font-size: clamp(80px, 24cqw, 300px);
+/* glass panel shared by the candidates */
+.cx .tw-panel {
+  background: rgba(8, 18, 20, 0.55);
+  border: 1px solid rgba(95, 212, 224, 0.28);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: inset 0 0 40px rgba(95, 212, 224, 0.06);
 }
 
-.font-press .hl-behind .tw-name-line {
-  font-size: clamp(60px, 16cqw, 200px);
+.cx .tw-chip {
+  background: rgba(14, 30, 33, 0.7);
+  border-color: rgba(95, 212, 224, 0.2);
+  box-shadow: 0 3px 0 rgba(95, 212, 224, 0.14);
 }
 
-.hl-behind .tw-portrait {
+.cx .tw-chip:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+/* A · Descent */
+
+.cx-depth {
+  transform: translate3d(calc(var(--px) * var(--z) * -14px), calc(var(--py) * var(--z) * -8px), 0);
+}
+
+.extrude {
+  color: #effcfb;
+  /* stacked offsets read as thickness running back toward the vanishing point */
+  text-shadow:
+    calc(var(--px) * -1px) 1px 0 #43aeb9,
+    calc(var(--px) * -2px) 2px 0 #3698a3,
+    calc(var(--px) * -3px) 3px 0 #2b828c,
+    calc(var(--px) * -4px) 4px 0 #226c75,
+    calc(var(--px) * -5px) 5px 0 #1a575f,
+    calc(var(--px) * -6px) 6px 0 #134349,
+    calc(var(--px) * -7px) 7px 0 #0d3035,
+    calc(var(--px) * -8px) 8px 0 #081f22,
+    0 0 40px rgba(95, 212, 224, 0.45);
+}
+
+.cx-kicker {
+  margin: 18px 0 0;
+  font-family: var(--term);
+  font-size: 22px;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  text-shadow: 0 0 12px var(--accent-dim);
+}
+
+.reflect {
+  -webkit-box-reflect: below -4px linear-gradient(transparent 62%, rgba(255, 255, 255, 0.2));
+}
+
+/* the lit, layered ASCII figure (AsciiFigure) */
+
+.fig-wrap {
+  width: min(100%, 470px);
+  margin-top: clamp(12px, 2cqw, 24px);
+}
+
+.fig {
   position: relative;
-  margin-top: 4cqw;
+  width: 100%;
+  -webkit-mask-image: linear-gradient(to bottom, #000 68%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 68%, transparent 100%);
 }
 
-/* layout 4: name and dialog, portrait as a faint ghost */
-.hl-minimal {
-  padding: clamp(40px, 8cqw, 96px) 0 8px;
+/* the source runs off the top of its frame: fade the hair out instead of cutting it */
+.fig.is-cut-top {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 10%, #000 68%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 10%, #000 68%, transparent 100%);
 }
 
-.hl-ghost {
+/* depth bands: the silhouette edge (--d: 0) stays put, the core (--d: 2) moves most */
+.fig-band {
   position: absolute;
   inset: 0;
-  display: flex;
-  justify-content: center;
-  opacity: 0.16;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 5px rgba(95, 212, 224, 0.35));
+  transform: translate3d(calc(var(--px) * var(--d) * -5px), calc(var(--py) * var(--d) * -3px), 0);
+}
+
+/* a pool of floor light under her feet */
+.grounded::after {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: -5%;
+  height: 16%;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(95, 212, 224, 0.26), transparent 70%);
+  filter: blur(6px);
+}
+
+.floating {
+  animation: float 7s ease-in-out infinite;
+}
+
+.floating .fig,
+.floating .fig.is-cut-top {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 10%, #000 52%, transparent 94%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 10%, #000 52%, transparent 94%);
+}
+
+@keyframes float {
+  50% { transform: translateY(-10px); }
+}
+
+/* night sky shared by E and F */
+
+.cx-dream,
+.cx-nebula {
+  background: radial-gradient(ellipse 100% 80% at 50% 30%, #08151a, #040607 80%);
+}
+
+.cx > .stars,
+.cx > .nebula,
+.cx > .fog {
+  position: absolute;
+  z-index: 0;
   pointer-events: none;
 }
 
-.hl-ghost .tw-portrait {
-  width: min(100%, 900px);
-  margin-top: 0;
+.cx > .stars {
+  inset: 0;
 }
 
-.hl-minimal > :not(.hl-ghost) {
+.stars i {
+  position: absolute;
+  inset: -40px;
+  animation: twinkle 6s ease-in-out infinite;
+}
+
+.stars-far {
+  background-image:
+    radial-gradient(1px 1px at 12% 22%, #cdeee9, transparent),
+    radial-gradient(1px 1px at 37% 71%, #cdeee9, transparent),
+    radial-gradient(1px 1px at 58% 12%, #cdeee9, transparent),
+    radial-gradient(1px 1px at 81% 49%, #cdeee9, transparent),
+    radial-gradient(1px 1px at 93% 88%, #cdeee9, transparent),
+    radial-gradient(1px 1px at 24% 93%, #cdeee9, transparent);
+  background-size: 240px 240px;
+  opacity: 0.45;
+  transform: translate(calc(var(--px) * -4px), calc(var(--py) * -3px));
+}
+
+.stars-mid {
+  background-image:
+    radial-gradient(1.5px 1.5px at 18% 64%, #e2fbf8, transparent),
+    radial-gradient(1.5px 1.5px at 46% 28%, #e2fbf8, transparent),
+    radial-gradient(1.5px 1.5px at 72% 81%, #e2fbf8, transparent),
+    radial-gradient(1.5px 1.5px at 88% 16%, #e2fbf8, transparent);
+  background-size: 380px 380px;
+  opacity: 0.6;
+  transform: translate(calc(var(--px) * -10px), calc(var(--py) * -6px));
+  animation-duration: 8s;
+  animation-delay: -3s;
+}
+
+.stars-near {
+  background-image:
+    radial-gradient(2px 2px at 30% 40%, #fff, transparent),
+    radial-gradient(6px 6px at 30% 40%, rgba(95, 212, 224, 0.35), transparent),
+    radial-gradient(2px 2px at 76% 66%, #fff, transparent),
+    radial-gradient(6px 6px at 76% 66%, rgba(95, 212, 224, 0.35), transparent);
+  background-size: 560px 520px;
+  opacity: 0.75;
+  transform: translate(calc(var(--px) * -20px), calc(var(--py) * -12px));
+  animation-duration: 11s;
+  animation-delay: -6s;
+}
+
+@keyframes twinkle {
+  50% { opacity: 0.2; }
+}
+
+.cx > .nebula {
+  inset: -10%;
+  background:
+    radial-gradient(ellipse 38% 28% at 28% 30%, rgba(95, 212, 224, 0.13), transparent 70%),
+    radial-gradient(ellipse 34% 26% at 74% 40%, rgba(96, 116, 224, 0.11), transparent 70%),
+    radial-gradient(ellipse 50% 24% at 50% 74%, rgba(95, 212, 224, 0.09), transparent 70%);
+  filter: blur(18px);
+  animation: nebula-drift 30s ease-in-out infinite alternate;
+}
+
+@keyframes nebula-drift {
+  to { transform: translate(3%, -2%) scale(1.06); }
+}
+
+/* E: fog where the floor meets the sky */
+.cx > .fog {
+  left: 0;
+  right: 0;
+  top: 56%;
+  height: 32%;
+  background: linear-gradient(to bottom, transparent, rgba(12, 32, 36, 0.85) 42%, rgba(12, 32, 36, 0.3) 75%, transparent);
+  filter: blur(8px);
+  animation: fog-breathe 12s ease-in-out infinite alternate;
+}
+
+@keyframes fog-breathe {
+  to { opacity: 0.7; transform: translateY(-2%); }
+}
+
+/* the motes canvas is the last canvas in E and F: it drifts in front of her */
+.cx-dream > canvas:last-of-type,
+.cx-nebula > canvas:last-of-type {
+  z-index: 2;
+}
+
+.cx-dream > .cx-dock,
+.cx-nebula > .cx-dock {
+  z-index: 3;
+}
+
+.dream-name .tw-name-line {
+  padding-left: 0.28em; /* balances the trailing letter-spacing */
+  font-size: clamp(28px, 5.4cqw, 64px);
+  letter-spacing: 0.28em;
+  color: rgba(214, 246, 242, 0.92);
+  text-shadow: 0 0 18px rgba(95, 212, 224, 0.6), 0 0 48px rgba(95, 212, 224, 0.25);
+  animation: dream-flicker 7s steps(1) infinite;
+}
+
+@keyframes dream-flicker {
+  0%, 100% { opacity: 1; }
+  62% { opacity: 0.55; }
+  63% { opacity: 1; }
+  64% { opacity: 0.7; }
+  65% { opacity: 1; }
+}
+
+/* F: tags orbit her; each one turns back to face the viewer and dims as it passes behind */
+
+@property --spin {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 0deg;
+}
+
+.orbit-stage {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: clamp(8px, 2cqw, 24px);
+  perspective: 1100px;
+}
+
+.orbit-body {
   position: relative;
+  width: min(100%, 470px);
+  transform-style: preserve-3d;
 }
 
-.hl-tag {
-  margin: 22px 0 18px;
+.orbit-body .fig-wrap {
+  width: 100%;
+  margin: 0;
+}
+
+.orbit {
+  position: absolute;
+  top: 46%;
+  left: 50%;
+  transform-style: preserve-3d;
+  transform: rotateX(-8deg);
+  animation: orbit-spin 32s linear infinite;
+}
+
+@keyframes orbit-spin {
+  to { --spin: 360deg; }
+}
+
+.orbit-tag {
+  --turn: calc(var(--a) + var(--spin));
+  position: absolute;
+  padding: 2px 8px;
   font-family: var(--term);
-  font-size: 22px;
-  color: var(--muted);
+  font-size: 18px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--accent);
+  background: rgba(5, 20, 22, 0.5);
+  border: 1px solid rgba(95, 212, 224, 0.35);
+  text-shadow: 0 0 8px rgba(95, 212, 224, 0.6);
+  opacity: calc(0.6 + 0.4 * cos(var(--turn)));
+  filter: blur(calc((1 - cos(var(--turn))) * 0.8px));
+  transform: translate(-50%, -50%) rotateY(var(--turn)) translateZ(min(34cqw, 300px)) rotateY(calc(-1 * var(--turn)))
+    translateY(var(--y));
 }
 
 /* ---------- lab (temporary) ---------- */
@@ -879,9 +1105,13 @@ main h2 {
 }
 
 .lab-frame {
-  padding: 28px 24px 32px;
+  overflow: hidden;
   border-radius: 6px;
   box-shadow: 0 0 0 1px var(--rule);
+}
+
+.lab-frame > .hl-petersen {
+  padding: 0 24px 32px;
 }
 
 .lab-item figcaption {

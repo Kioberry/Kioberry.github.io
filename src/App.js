@@ -36,10 +36,6 @@ function useHashPath() {
 export default function App() {
   const path = useHashPath();
   const Page = routes[path] || HomePage;
-  // the landing page is always dark, like matthewpetersen.ca; the reading pages follow the theme
-  useEffect(() => {
-    document.body.classList.toggle('is-home', Page === HomePage);
-  }, [Page]);
   return (
     <>
       <SiteHeader path={path} />
