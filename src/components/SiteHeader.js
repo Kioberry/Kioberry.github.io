@@ -1,3 +1,5 @@
+import { THEMES } from './sceneConfig';
+
 const links = [
   { path: '/', label: 'Home' },
   { path: '/projects', label: 'Projects' },
@@ -5,10 +7,14 @@ const links = [
   { path: '/resume', label: 'Resume' },
 ];
 
-// The whole site shares the home page's dark teal palette, so there is no theme toggle.
-export default function SiteHeader({ path }) {
+// full-bleed scenes the nav floats over
+const OVERLAY = ['/', '/playground'];
+
+// The whole site shares the home scene's palette; the switch cycles the themes in sceneConfig.js.
+export default function SiteHeader({ path, theme, onTheme }) {
+  const current = THEMES[theme];
   return (
-    <header className="site">
+    <header className={OVERLAY.includes(path) ? 'site site-over' : 'site'}>
       <nav>
         {links.map((l) => (
           <a key={l.path} href={`#${l.path}`} aria-current={path === l.path ? 'page' : undefined}>
@@ -16,6 +22,10 @@ export default function SiteHeader({ path }) {
           </a>
         ))}
       </nav>
+      <button type="button" className="themeb" onClick={onTheme} aria-label={`Switch theme (now ${current.label})`}>
+        <i style={{ background: current.colors.accent }} aria-hidden="true" />
+        <span>{current.label}</span>
+      </button>
     </header>
   );
 }

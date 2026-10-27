@@ -3,6 +3,7 @@ import AsciiFigure from './AsciiFigure';
 import TwinPanel, { TwinAnswer } from './TwinPanel';
 import useTwinChat from '../agent/useTwinChat';
 import { GridTunnel, Motes, StarField, useParallax } from './CyberFx';
+import { DEFAULTS, extrudeShadow, lookFrom, sceneVars, triplet } from './sceneConfig';
 
 // Candidate home layouts. LabPage shows them side by side; HomePage renders the chosen one.
 const TWIN = `${process.env.PUBLIC_URL}/twin`;
@@ -16,7 +17,7 @@ const FROM_MOON = [-0.6, -0.8];
 function Figure({ chat, light, className = '' }) {
   return (
     <div className={`fig-wrap ${className}`}>
-      <AsciiFigure {...media} cols={128} light={light} talking={chat.talking} label={LABEL} />
+      <AsciiFigure {...media} look={lookFrom(DEFAULTS, light)} talking={chat.talking} label={LABEL} />
     </div>
   );
 }
@@ -39,25 +40,45 @@ export function LayoutPetersen() {
 }
 
 // A. Descent: a grid floor and ceiling run into a vanishing point at her feet; the glow there rim-lights
-// her from below, the name is extruded toward it, and she is mirrored on the floor.
-export function LayoutDescent() {
+// her from below and the name is extruded toward it. Only the space moves with the pointer: she is a 2D
+// video, so she stays put, and the glyphs near the pointer scramble instead. Every knob is in `cfg`
+// (sceneConfig.js); #/playground edits it live.
+export function LayoutDescent({ cfg = DEFAULTS }) {
   const chat = useTwinChat();
   const [ref, pos] = useParallax();
+  const c = cfg.colors;
   return (
-    <div ref={ref} className="hl cx cx-descent">
-      <GridTunnel pos={pos} horizon={0.66} />
+    <div ref={ref} className="hl cx cx-descent" style={sceneVars(cfg)}>
+      <GridTunnel
+        pos={pos}
+        horizon={cfg.horizon}
+        ceiling={cfg.ceiling}
+        strength={cfg.gridStrength}
+        dust={cfg.dust}
+        sway={cfg.parallax}
+        color={triplet(c.grid)}
+        glowColor={triplet(c.glow)}
+        dustColor={triplet(c.high)}
+      />
       <div className="cx-vignette" aria-hidden="true" />
+      <div className={`fig-stage${cfg.reflect ? ' reflect' : ''}`}>
+        <AsciiFigure {...media} font={cfg.asciiFont} look={lookFrom(cfg, FROM_HORIZON)} talking={chat.talking} label={LABEL} />
+      </div>
       <h1 className="tw-name cx-depth" style={{ '--z': 1.6 }}>
-        <span className="tw-name-line extrude">Astrid Xie</span>
+        <span className="tw-name-line extrude" style={{ textShadow: extrudeShadow(cfg) }}>
+          Astrid Xie
+        </span>
       </h1>
-      <p className="cx-kicker cx-depth" style={{ '--z': 1.2 }}>
-        AI engineer · building agents that ship
-      </p>
-      <Figure chat={chat} light={FROM_HORIZON} className="reflect" />
+      {cfg.kicker && (
+        <p className="cx-kicker cx-depth" style={{ '--z': 1.2 }}>
+          AI engineer · building agents that ship
+        </p>
+      )}
       <div className="cx-dock">
         <TwinAnswer chat={chat} />
         <TwinPanel chat={chat} />
       </div>
+      <div className="cx-texture" aria-hidden="true" />
     </div>
   );
 }

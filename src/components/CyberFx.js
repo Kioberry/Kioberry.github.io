@@ -93,11 +93,12 @@ export function useParallax() {
 }
 
 // A floor (and optionally ceiling) grid running into a vanishing point at `horizon` (fraction of height),
-// with dust flying out of it. The vanishing point drifts against the pointer; `strength` scales every alpha.
-export function GridTunnel({ pos, horizon = 0.6, ceiling = true, strength = 1, dust = 140 }) {
+// with dust flying out of it. The vanishing point drifts against the pointer by `sway`; `strength` scales
+// every alpha. Colours are "r, g, b" triplets.
+export function GridTunnel({ pos, horizon = 0.6, ceiling = true, strength = 1, dust = 140, sway = 1, color = TEAL, glowColor = color, dustColor = '205, 238, 233' }) {
   const state = useRef(null);
   const ref = useCanvasLoop((ctx, w, h, t) => {
-    if (!state.current) {
+    if (!state.current || state.current.dust.length !== dust) {
       state.current = {
         last: t,
         dust: Array.from({ length: dust }, () => ({ x: Math.random() * 2 - 1, y: Math.random() * 2 - 1, z: Math.random() })),
@@ -107,13 +108,13 @@ export function GridTunnel({ pos, horizon = 0.6, ceiling = true, strength = 1, d
     const dt = Math.min(0.05, t - s.last);
     s.last = t;
     const p = pos.current;
-    const vx = w / 2 - p.x * w * 0.05;
-    const vy = h * horizon - p.y * h * 0.035;
+    const vx = w / 2 - p.x * sway * w * 0.05;
+    const vy = h * horizon - p.y * sway * h * 0.035;
     ctx.clearRect(0, 0, w, h);
 
     const glow = ctx.createRadialGradient(vx, vy, 0, vx, vy, Math.max(w, h) * 0.6);
-    glow.addColorStop(0, `rgba(${TEAL}, ${0.2 * strength})`);
-    glow.addColorStop(0.3, `rgba(${TEAL}, ${0.05 * strength})`);
+    glow.addColorStop(0, `rgba(${glowColor}, ${0.2 * strength})`);
+    glow.addColorStop(0.3, `rgba(${glowColor}, ${0.05 * strength})`);
     glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, w, h);
@@ -127,8 +128,8 @@ export function GridTunnel({ pos, horizon = 0.6, ceiling = true, strength = 1, d
       const span = Math.abs(edge - vy);
       // rails: lines from the vanishing point to the edge, fading toward the horizon
       const rail = ctx.createLinearGradient(0, vy, 0, edge);
-      rail.addColorStop(0, `rgba(${TEAL}, 0)`);
-      rail.addColorStop(1, `rgba(${TEAL}, ${alpha})`);
+      rail.addColorStop(0, `rgba(${color}, 0)`);
+      rail.addColorStop(1, `rgba(${color}, ${alpha})`);
       ctx.strokeStyle = rail;
       ctx.beginPath();
       for (let k = -24; k <= 24; k++) {
@@ -141,7 +142,7 @@ export function GridTunnel({ pos, horizon = 0.6, ceiling = true, strength = 1, d
         const d = i + 1 - scroll;
         const y = vy + (dir * span * 2.4) / (d + 1.4);
         if ((dir > 0 && y > h) || (dir < 0 && y < 0)) continue;
-        ctx.strokeStyle = `rgba(${TEAL}, ${alpha * Math.min(1, 1.6 / Math.sqrt(d))})`;
+        ctx.strokeStyle = `rgba(${color}, ${alpha * Math.min(1, 1.6 / Math.sqrt(d))})`;
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(w, y);
@@ -160,7 +161,7 @@ export function GridTunnel({ pos, horizon = 0.6, ceiling = true, strength = 1, d
       const sx = vx + (d.x / d.z) * w * 0.18;
       const sy = vy + (d.y / d.z) * h * 0.18;
       const near = 1 - d.z;
-      ctx.fillStyle = `rgba(205, 238, 233, ${near * 0.7})`;
+      ctx.fillStyle = `rgba(${dustColor}, ${near * 0.7})`;
       const r = 0.4 + near * 1.8;
       ctx.fillRect(sx - r / 2, sy - r / 2, r, r);
     }
