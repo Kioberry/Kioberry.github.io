@@ -1,32 +1,72 @@
 import { useEffect, useRef } from 'react';
 
-// The ask panel, modelled on matthewpetersen.ca: the latest exchange on top (the question, then the answer
-// on a ↳ line below and to its right), follow-up chips with a shuffle button, the input with a mic, and
-// the conversation-mode switch underneath. The answer sits inside the panel so it reads over any scene.
-function Exchange({ chat }) {
-  const { current, text, typed, talking, pending, asking, skip } = chat;
+// The ask panel, modelled on matthewpetersen.ca, now a short conversation instead of a single answer:
+// earlier exchanges stay above (dimmed), the latest question sits under them, and the answer arrives as a few
+// chat bubbles on ↳ lines, typed at a human pace with a "typing" pause between bubbles. Questions asked while
+// the twin is still talking wait in line and are answered in order.
+function Conversation({ chat }) {
+  const { exchanges, phase, asking, queue, skip, talking } = chat;
   const ref = useRef(null);
-  // long answers scroll inside the panel; keep the line being typed in view
+  const lastLen = exchanges.length ? exchanges[exchanges.length - 1].lines.join('').length : 0;
+  // keep the newest line in view while it is being typed
   useEffect(() => {
-    if (talking && ref.current) ref.current.scrollTop = ref.current.scrollHeight;
-  }, [typed, talking]);
-  if (!current && !pending) return null;
+    if (ref.current) ref.current.scrollTop = ref.current.scrollHeight;
+  }, [lastLen, phase, exchanges.length, queue.length]);
+  if (!exchanges.length && phase !== 'thinking') return null;
   return (
-    <div ref={ref} className="tw-exchange" aria-live="polite" onClick={skip}>
-      <p className="tw-q">{pending ? asking : current.q}</p>
-      <p className="tw-reply">
-        <span aria-hidden="true">↳</span>
-        <span className="tw-a">
-          {pending ? <span className="dots">thinking</span> : text.slice(0, typed)}
-          {talking && <span className="caret" />}
-        </span>
-      </p>
+    <div ref={ref} className="tw-exchange" aria-live="polite" onClick={skip} title="Click to skip ahead">
+      {exchanges.map((x, i) => (
+        <div key={i} className={`tw-turn ${i < exchanges.length - 1 || phase === 'thinking' ? 'is-past' : ''}`}>
+          <p className="tw-q">{x.q}</p>
+          {x.lines.map((l, j) => (
+            <p className="tw-reply" key={j}>
+              <span aria-hidden="true">↳</span>
+              <span className="tw-a">
+                {l}
+                {!x.done && j === x.lines.length - 1 && talking && <span className="caret" />}
+              </span>
+            </p>
+          ))}
+          {!x.done && phase === 'gap' && (
+            <p className="tw-reply tw-typing" aria-label="typing">
+              <span aria-hidden="true">↳</span>
+              <span className="tw-a">
+                <span className="tw-dots" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </span>
+              </span>
+            </p>
+          )}
+        </div>
+      ))}
+      {phase === 'thinking' && (
+        <div className="tw-turn">
+          <p className="tw-q">{asking}</p>
+          <p className="tw-reply tw-typing">
+            <span aria-hidden="true">↳</span>
+            <span className="tw-a">
+              <span className="tw-dots" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+            </span>
+          </p>
+        </div>
+      )}
+      {queue.map((q) => (
+        <p key={q} className="tw-q tw-queued">
+          {q} <small>(next)</small>
+        </p>
+      ))}
     </div>
   );
 }
 
 export default function TwinPanel({ chat, name = 'Astrid' }) {
-  const { input, setInput, ask, pending, followups, shuffleFollowups, browse, canBack, canForward } = chat;
+  const { input, setInput, ask, followups, shuffleFollowups } = chat;
   return (
     <div className="tw-wrap">
       <form
@@ -36,39 +76,29 @@ export default function TwinPanel({ chat, name = 'Astrid' }) {
           ask(input);
         }}
       >
-        <Exchange chat={chat} />
+        <Conversation chat={chat} />
         <div className="tw-chips">
           <button type="button" className="tw-icon" onClick={shuffleFollowups} aria-label="Show other questions">
             ↻
           </button>
           {followups.map((q) => (
-            <button type="button" key={q} className="tw-chip" onClick={() => ask(q)} disabled={pending}>
+            <button type="button" key={q} className="tw-chip" onClick={() => ask(q)}>
               <span aria-hidden="true">↳</span> {q}
             </button>
           ))}
         </div>
         <div className="tw-input">
-          {(canBack || canForward) && (
-            <span className="tw-nav">
-              <button type="button" onClick={() => browse(-1)} disabled={!canBack} aria-label="Previous answer">
-                ‹
-              </button>
-              <button type="button" onClick={() => browse(1)} disabled={!canForward} aria-label="Next answer">
-                ›
-              </button>
-            </span>
-          )}
           <span className="tw-grip" aria-hidden="true">
             ⣿
           </span>
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={`Ask about ${name}`}
+            placeholder={chat.phase === 'idle' ? `Ask about ${name}` : "Ask another, I'll get to it next"}
             aria-label={`Ask ${name}'s digital twin`}
           />
           {input.trim() ? (
-            <button type="submit" className="tw-mic" disabled={pending} aria-label="Send">
+            <button type="submit" className="tw-mic" aria-label="Send">
               ↵
             </button>
           ) : (

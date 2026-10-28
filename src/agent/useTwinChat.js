@@ -1,83 +1,153 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { askTwin, pickFollowups, suggestedQuestions } from './twinAgent';
+import { chunkDelay, gapMs, nextStop, thinkingMs } from './pace';
 
-const TYPE_MS = 18;
-
+const NO_BUBBLES = [];
 const SpeechRecognition = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
+const canSpeak = typeof window !== 'undefined' && 'speechSynthesis' in window;
+const reduceMotion =
+  typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// Conversation state shared by every home layout: the exchanges, the typewriter, follow-up
-// suggestions, conversation mode (answers read aloud) and the mic (browser speech recognition).
+// Conversation state shared by every home layout.
+//
+// The twin answers like a person in a chat:
+//   thinking -> talking (bubble 1, typed at a human rhythm) -> typing gap -> talking (bubble 2) ... -> idle
+// Visitors can keep asking while it talks: new questions wait in a queue and are answered in order.
+// Conversation mode reads each bubble aloud and keeps the text in step with the voice.
 export default function useTwinChat() {
-  const [answers, setAnswers] = useState([]);
-  const [view, setView] = useState(-1); // which exchange the ‹ › arrows are showing
-  const [typed, setTyped] = useState(0);
-  const [pending, setPending] = useState(false);
-  const [asking, setAsking] = useState(''); // the question in flight, shown while pending
+  const [answers, setAnswers] = useState([]); // [{ q, bubbles, topic, project, company, expression }]
+  const [active, setActive] = useState(-1); // exchange being revealed
+  const [bubble, setBubble] = useState(0); // bubble being typed in the active exchange
+  const [typed, setTyped] = useState(0); // characters shown of that bubble
+  const [phase, setPhase] = useState('idle'); // idle | thinking | talking | gap
+  const [asking, setAsking] = useState('');
+  const [queue, setQueue] = useState([]);
   const [input, setInput] = useState('');
   const [voice, setVoice] = useState(false);
   const [listening, setListening] = useState(false);
   const [followups, setFollowups] = useState(suggestedQuestions);
   const recognition = useRef(null);
+  const speaking = useRef(false);
+  const [spokenTick, setSpokenTick] = useState(0);
 
-  const current = answers[view] || null;
-  const text = pending || !current ? '' : current.text;
-  const talking = !pending && typed < text.length;
+  const current = answers[active] || null;
+  const bubbles = current ? current.bubbles : NO_BUBBLES;
+  const line = bubbles[bubble] || '';
+
+  // ---- the talking rhythm --------------------------------------------------------------------
+  useEffect(() => {
+    if (phase !== 'talking') return undefined;
+    if (typed < line.length) {
+      // word by word, with pauses where a speaker would breathe. In conversation mode the voice drives the
+      // text (see the speak effect) and this timer is only a slow fallback.
+      const j = nextStop(line, typed);
+      const ms = typed === 0 ? 0 : chunkDelay(line, typed, j) * (voice && canSpeak ? 2.2 : 1);
+      const id = setTimeout(() => setTyped((n) => Math.max(n, j)), reduceMotion ? 0 : ms);
+      return () => clearTimeout(id);
+    }
+    if (voice && canSpeak && speaking.current) return undefined; // let the sentence finish being spoken
+    if (bubble < bubbles.length - 1) setPhase('gap');
+    else setPhase('idle');
+    return undefined;
+  }, [phase, typed, line, bubble, bubbles.length, voice, spokenTick]);
 
   useEffect(() => {
-    if (typed >= text.length) return;
-    const id = setTimeout(() => setTyped((n) => n + 1), TYPE_MS);
+    if (phase !== 'gap') return undefined;
+    const id = setTimeout(() => {
+      setBubble((b) => b + 1);
+      setTyped(0);
+      setPhase('talking');
+    }, reduceMotion ? 0 : gapMs(bubbles[bubble + 1]));
     return () => clearTimeout(id);
-  }, [typed, text]);
+  }, [phase, bubble, bubbles]);
 
-  // conversation mode: read answers aloud with the browser's speech engine
+  // ---- conversation mode: speak each bubble, reveal words as they are spoken ----------------------
   useEffect(() => {
-    if (!('speechSynthesis' in window)) return;
+    if (!canSpeak) return undefined;
     window.speechSynthesis.cancel();
-    if (!voice || pending || !text) return;
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = /[一-鿿]/.test(text) ? 'zh-CN' : 'en-US';
+    speaking.current = false;
+    if (!voice || phase !== 'talking' || !line) return undefined;
+    const u = new SpeechSynthesisUtterance(line);
+    u.lang = /[一-鿿]/.test(line) ? 'zh-CN' : 'en-US';
+    u.rate = 1.02;
+    u.onboundary = (e) => setTyped((n) => Math.max(n, Math.min(line.length, e.charIndex + (e.charLength || 1))));
+    u.onend = () => {
+      speaking.current = false;
+      setTyped(line.length);
+      setSpokenTick((t) => t + 1);
+    };
+    u.onerror = u.onend;
+    speaking.current = true;
     window.speechSynthesis.speak(u);
-  }, [voice, text, pending]);
+    return () => window.speechSynthesis.cancel();
+    // re-run only when a new bubble starts or the mode changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voice, active, bubble, phase === 'talking']);
 
-  const ask = useCallback(
-    async (question) => {
-      const q = question.trim();
-      if (!q || pending) return;
-      setPending(true);
+  // ---- asking ----------------------------------------------------------------------------------
+  const run = useCallback(
+    async (q) => {
+      setPhase('thinking');
       setAsking(q);
-      setInput('');
+      const history = answers.flatMap((a) => [
+        { role: 'user', content: a.q },
+        { role: 'assistant', content: a.bubbles.join('\n\n'), topic: a.topic, topics: a.topics, project: a.project, company: a.company },
+      ]);
       let res;
       try {
-        const history = answers.flatMap((a) => [
-          { role: 'user', content: a.q },
-          { role: 'assistant', content: a.text },
-        ]);
-        res = await askTwin(q, history);
+        [res] = await Promise.all([askTwin(q, history), new Promise((r) => setTimeout(r, reduceMotion ? 0 : thinkingMs(q)))]);
       } catch {
-        res = { text: 'Connection glitch. Try again?', expression: 'think' };
+        res = { bubbles: ['Hmm, my connection just glitched.', 'Mind asking that again?'], expression: 'think' };
       }
       const asked = [...answers.map((a) => a.q), q];
-      setAnswers([...answers, { q, ...res }]);
-      setView(answers.length);
-      setFollowups(res.followups || pickFollowups(asked));
+      setAnswers((prev) => [...prev, { q, ...res, bubbles: res.bubbles || [res.text] }]);
+      setActive(answers.length);
+      setBubble(0);
       setTyped(0);
-      setPending(false);
+      setFollowups(res.followups || pickFollowups(asked, res.topic));
+      setPhase('talking');
     },
-    [answers, pending]
+    [answers]
   );
 
-  const browse = (dir) => {
-    const next = Math.min(answers.length - 1, Math.max(0, view + dir));
-    if (next !== view) {
-      setView(next);
-      setTyped(answers[next].text.length);
-    }
+  const ask = useCallback(
+    (question) => {
+      const q = question.trim();
+      if (!q) return;
+      setInput('');
+      if (phase !== 'idle') {
+        setQueue((qs) => (qs.includes(q) || q === asking ? qs : [...qs, q]));
+        return;
+      }
+      run(q);
+    },
+    [phase, run, asking]
+  );
+
+  // answer queued questions one after another, with a small breath in between
+  useEffect(() => {
+    if (phase !== 'idle' || !queue.length) return undefined;
+    const id = setTimeout(() => {
+      const [next, ...rest] = queue;
+      setQueue(rest);
+      run(next);
+    }, reduceMotion ? 0 : 500);
+    return () => clearTimeout(id);
+  }, [phase, queue, run]);
+
+  // click on the answer: finish the current answer at once
+  const skip = () => {
+    if (!current || phase === 'thinking') return;
+    if (canSpeak) window.speechSynthesis.cancel();
+    speaking.current = false;
+    setBubble(bubbles.length - 1);
+    setTyped(bubbles[bubbles.length - 1].length);
+    setPhase('idle');
   };
 
   const shuffleFollowups = () => {
     const asked = answers.map((a) => a.q);
-    const pool = pickFollowups([...asked, ...followups]);
-    setFollowups(pool);
+    setFollowups(pickFollowups([...asked, ...followups], current?.topic));
   };
 
   const listen = () => {
@@ -97,20 +167,28 @@ export default function useTwinChat() {
     r.start();
   };
 
+  // what the panel shows: every exchange so far, the active one partly revealed
+  const exchanges = answers.map((a, i) => {
+    if (i !== active || phase === 'idle') return { q: a.q, lines: a.bubbles, done: true };
+    return { q: a.q, lines: [...a.bubbles.slice(0, bubble), a.bubbles[bubble].slice(0, typed)], done: false };
+  });
+
+  const text = current ? current.bubbles.join('\n\n') : '';
   return {
+    exchanges,
     current,
     text,
     typed,
-    talking,
-    pending,
+    phase,
+    talking: phase === 'talking' && typed < line.length,
+    typing: phase === 'gap',
+    pending: phase === 'thinking',
     asking,
+    queue,
     input,
     setInput,
     ask,
-    browse,
-    canBack: view > 0,
-    canForward: view < answers.length - 1,
-    skip: () => setTyped(text.length),
+    skip,
     followups,
     shuffleFollowups,
     voice,

@@ -612,6 +612,73 @@ main h2 {
   75% { content: '...'; }
 }
 
+/* conversation: earlier turns stay visible but quiet; bubbles stack on ↳ lines */
+.tw-turn + .tw-turn {
+  margin-top: 14px;
+}
+
+.tw-turn.is-past {
+  opacity: 0.5;
+  transition: opacity 0.4s ease;
+}
+
+.tw-turn.is-past:hover {
+  opacity: 0.85;
+}
+
+.tw-turn.is-past .tw-q {
+  font-size: 17px;
+}
+
+.tw-reply + .tw-reply {
+  margin-top: 4px;
+}
+
+.tw-queued {
+  margin-top: 12px;
+  font-size: 17px;
+  opacity: 0.45;
+}
+
+.tw-queued small {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+/* "typing..." between bubbles: three soft dots */
+.tw-dots {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  height: 1.2em;
+}
+
+.tw-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.35;
+  animation: tw-bounce 1.1s ease-in-out infinite;
+}
+
+.tw-dots i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.tw-dots i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes tw-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
+  30% { transform: translateY(-4px); opacity: 0.9; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tw-dots i { animation: none; }
+}
+
 /* the ask panel */
 
 .tw-wrap {
