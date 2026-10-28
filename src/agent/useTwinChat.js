@@ -12,6 +12,7 @@ export default function useTwinChat() {
   const [view, setView] = useState(-1); // which exchange the ‹ › arrows are showing
   const [typed, setTyped] = useState(0);
   const [pending, setPending] = useState(false);
+  const [asking, setAsking] = useState(''); // the question in flight, shown while pending
   const [input, setInput] = useState('');
   const [voice, setVoice] = useState(false);
   const [listening, setListening] = useState(false);
@@ -43,6 +44,7 @@ export default function useTwinChat() {
       const q = question.trim();
       if (!q || pending) return;
       setPending(true);
+      setAsking(q);
       setInput('');
       let res;
       try {
@@ -101,6 +103,7 @@ export default function useTwinChat() {
     typed,
     talking,
     pending,
+    asking,
     input,
     setInput,
     ask,

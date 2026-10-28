@@ -1,14 +1,25 @@
-// The ask panel, modelled on matthewpetersen.ca: follow-up chips with a shuffle button, the input
-// with a mic, and the conversation-mode switch underneath.
-export function TwinAnswer({ chat }) {
-  const { current, text, typed, talking, pending, skip } = chat;
-  if (!current && !pending) return <div className="tw-answer" aria-live="polite" />;
+import { useEffect, useRef } from 'react';
+
+// The ask panel, modelled on matthewpetersen.ca: the latest exchange on top (the question, then the answer
+// on a ↳ line below and to its right), follow-up chips with a shuffle button, the input with a mic, and
+// the conversation-mode switch underneath. The answer sits inside the panel so it reads over any scene.
+function Exchange({ chat }) {
+  const { current, text, typed, talking, pending, asking, skip } = chat;
+  const ref = useRef(null);
+  // long answers scroll inside the panel; keep the line being typed in view
+  useEffect(() => {
+    if (talking && ref.current) ref.current.scrollTop = ref.current.scrollHeight;
+  }, [typed, talking]);
+  if (!current && !pending) return null;
   return (
-    <div className="tw-answer" aria-live="polite" onClick={skip}>
-      {current && !pending && <p className="tw-q">› {current.q}</p>}
-      <p className="tw-a">
-        {pending ? <span className="dots">thinking</span> : text.slice(0, typed)}
-        {talking && <span className="caret" />}
+    <div ref={ref} className="tw-exchange" aria-live="polite" onClick={skip}>
+      <p className="tw-q">{pending ? asking : current.q}</p>
+      <p className="tw-reply">
+        <span aria-hidden="true">↳</span>
+        <span className="tw-a">
+          {pending ? <span className="dots">thinking</span> : text.slice(0, typed)}
+          {talking && <span className="caret" />}
+        </span>
       </p>
     </div>
   );
@@ -25,6 +36,7 @@ export default function TwinPanel({ chat, name = 'Astrid' }) {
           ask(input);
         }}
       >
+        <Exchange chat={chat} />
         <div className="tw-chips">
           <button type="button" className="tw-icon" onClick={shuffleFollowups} aria-label="Show other questions">
             ↻

@@ -1,6 +1,6 @@
 import AsciiPortrait from './AsciiPortrait';
 import AsciiFigure from './AsciiFigure';
-import TwinPanel, { TwinAnswer } from './TwinPanel';
+import TwinPanel from './TwinPanel';
 import useTwinChat from '../agent/useTwinChat';
 import { GridTunnel, Motes, StarField, useParallax } from './CyberFx';
 import { DEFAULTS, extrudeShadow, lookFrom, sceneVars, triplet } from './sceneConfig';
@@ -33,7 +33,6 @@ export function LayoutPetersen() {
       <div className="tw-portrait">
         <AsciiPortrait {...media} cols={120} aspect={1.6} zoom={1.25} focusY={0.45} talking={chat.talking} label={LABEL} />
       </div>
-      <TwinAnswer chat={chat} />
       <TwinPanel chat={chat} />
     </div>
   );
@@ -75,7 +74,6 @@ export function LayoutDescent({ cfg = DEFAULTS }) {
         </p>
       )}
       <div className="cx-dock">
-        <TwinAnswer chat={chat} />
         <TwinPanel chat={chat} />
       </div>
       <div className="cx-texture" aria-hidden="true" />
@@ -103,7 +101,6 @@ export function LayoutDreamfield() {
       <Figure chat={chat} light={FROM_MOON} className="reflect grounded" />
       <Motes pos={pos} />
       <div className="cx-dock">
-        <TwinAnswer chat={chat} />
         <TwinPanel chat={chat} />
       </div>
     </div>
@@ -138,7 +135,6 @@ export function LayoutNebula() {
       </div>
       <Motes pos={pos} count={30} />
       <div className="cx-dock">
-        <TwinAnswer chat={chat} />
         <TwinPanel chat={chat} />
       </div>
     </div>
