@@ -1,4 +1,4 @@
-import { askTwin, respond, splitQuestions, toBubbles } from './twinAgent';
+import { askTwin, asSpoken, respond, splitQuestions, toBubbles } from './twinAgent';
 
 const rng = () => 0; // deterministic variant choice
 
@@ -64,4 +64,11 @@ test('Chinese questions get Chinese answers', () => {
 test('toBubbles keeps bubbles short', () => {
   const b = toBubbles('One. Two two. ' + 'Three is a much longer sentence that keeps going and going for a while. '.repeat(3));
   b.forEach((x) => expect(x.length).toBeLessThan(260));
+});
+
+test('decimals do not break sentences, and captions are said as sentences', () => {
+  expect(toBubbles('Beat GPT-4o, Gemini 2.0 Flash and Claude. Reached 0.842 accuracy.').join(' ')).toMatch(/Gemini 2\.0 Flash/);
+  expect(asSpoken('An AI agent that plans your day.')[0]).toMatch(/^It's an AI agent/);
+  expect(asSpoken('Turns raw microscopy into decisions.')[0]).toMatch(/^It turns raw/);
+  expect(asSpoken('QLoRA-fine-tuned small models for poker.')[0]).toMatch(/^Basically: QLoRA/);
 });

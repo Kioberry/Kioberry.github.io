@@ -68,8 +68,12 @@ const pick = (arr, rng) => arr[Math.floor(rng() * arr.length) % arr.length];
 const lower1 = (s) => s.charAt(0).toLowerCase() + s.slice(1);
 const article = (w) => (/^[AEIOU]/.test(w) ? 'an' : 'a');
 const listing = (xs, and = 'and') => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} ${and} ${xs[xs.length - 1]}`);
+// split after . ! ? only when followed by a space, so "2.0" and "0.842" stay intact
 const sentences = (s) =>
-  (s.match(/[^.!?。！？]+[.!?。！？]+(?=\s|$)|[^.!?。！？]+$/g) || [s]).map((x) => x.trim()).filter(Boolean);
+  String(s)
+    .split(/(?<=[.!?])\s+|(?<=[。！？])/)
+    .map((x) => x.trim())
+    .filter(Boolean);
 
 // Turn a paragraph into chat-sized bubbles (sentences packed up to ~170 chars each).
 export function toBubbles(text, max = 170) {
@@ -92,12 +96,31 @@ const firstPerson = (bullet) => `I ${lower1(bullet)}`;
 const featured = projects.filter((p) => p.featured);
 const byId = Object.fromEntries(projects.map((p) => [p.id, p]));
 const projectRe = (p) => new RegExp(`${p.title.replace(/\s+/g, '\\s*')}|\\b${p.id}\\b`, 'i');
-const linkWord = (p) =>
-  p.links?.length ? ` There's ${listing(p.links.map((l) => `a ${l.label.toLowerCase()}`))} link on my Projects page.` : '';
+const linkWord = (p) => {
+  const ls = (p.links || []).map((l) => (l.label === 'GitHub' ? 'GitHub' : l.label.toLowerCase()));
+  if (!ls.length) return '';
+  return ls.length === 1 ? ` There's a ${ls[0]} link on my Projects page.` : ` There are ${listing(ls)} links on my Projects page.`;
+};
+
+// Blurbs are written as captions ("An agent that...", "Turns raw..."); say them like a person would.
+export function asSpoken(blurb) {
+  const [first, ...rest] = toBubbles(blurb);
+  const keepCase = (w) => (/^[A-Z]{2}|^[A-Z][a-z]*[A-Z]/.test(w) ? w : lower1(w));
+  let spoken;
+  if (/^(An?|The)\s/.test(first)) spoken = `It's ${lower1(first)}`;
+  else if (/^[A-Z][a-z]+s\s/.test(first)) spoken = `It ${lower1(first)}`;
+  else spoken = `Basically: ${keepCase(first)}`;
+  return [spoken, ...rest];
+}
+
+const fmtPeriod = (period) => {
+  const m = period.match(/^(\w+) (\d{4}) – (\w+) (\d{4})$/);
+  return m && m[2] === m[4] ? `${m[1]} to ${m[3]} ${m[2]}` : period.replace(' – ', ' to ');
+};
 
 function projectIntro(p, rng) {
   const open = pick([`Oh, ${p.title}!`, `${p.title}, sure.`, `Ah, ${p.title}. I like talking about this one.`], rng);
-  return [open, ...toBubbles(p.blurb), `${p.subtitle}, ${p.date}.${linkWord(p)}`];
+  return [open, ...asSpoken(p.blurb), `That was ${p.date}.${linkWord(p)}`];
 }
 
 function projectMore(p) {
@@ -233,8 +256,8 @@ const INTENTS = [
       const [role, event] = a.subtitle.split('·').map((s) => s.trim());
       return pick(
         [
-          [`Ooh, hard to pick. Right now it's probably ${a.title}.`, toBubbles(a.blurb)[0], `${b.title} and ${c.title} are close seconds though. Want the story behind one of them?`],
-          [`${a.title}, if I have to choose one.`, `I was the ${lower1(role)} at the ${event}. ${toBubbles(a.blurb)[0]}`, `But ${c.title} is the one that won something. Ask me about either!`],
+          [`Ooh, hard to pick. Right now it's probably ${a.title}.`, asSpoken(a.blurb)[0], `${b.title} and ${c.title} are close seconds though. Want the story behind one of them?`],
+          [`${a.title}, if I have to choose one.`, `I was the ${lower1(role)} at the ${event}. ${asSpoken(a.blurb)[0]}`, `But ${c.title} is the one that won something. Ask me about either!`],
         ],
         rng
       );
@@ -250,7 +273,7 @@ const INTENTS = [
       const map = { mulholland: 0, smartlogic: 1, yimikang: 2, 亿米康: 2, 'china mobile': 3, 中国移动: 3 };
       const e = experience[map[key] ?? 0];
       ctx.company = e.company;
-      const lines = [`At ${e.company} I was ${article(e.role)} ${e.role} (${e.period}).`, firstPerson(e.bullets[0])];
+      const lines = [`At ${e.company} I was ${article(e.role)} ${e.role} (${fmtPeriod(e.period)}).`, firstPerson(e.bullets[0])];
       if (e.bullets[1]) lines.push(`I also ${lower1(e.bullets[1])}`);
       return zh ? [`在 ${e.company} 我是 ${e.role}（${e.period}）。`, ...lines.slice(1)] : lines;
     },
@@ -271,7 +294,7 @@ const INTENTS = [
         ];
       if (times) return ['Same four places as before!', `${m.company} most recently, then ${listing(rest.map((e) => e.company))}. Pick one and I'll go deeper.`];
       return [
-        `Most recently I was ${article(m.role)} ${m.role} at ${m.company} (${m.period}).`,
+        `Most recently I was ${article(m.role)} ${m.role} at ${m.company} (${fmtPeriod(m.period)}).`,
         "The thing I'm proudest of there is a Gemini payroll agent for nearly 50 client accounts. It took timecard recognition from 71.4% to 98.1%.",
         `Before that: ${listing(rest.map((e) => e.company))}. Want details on any of them?`,
       ];
