@@ -10,21 +10,17 @@
 //
 // Pacing (thinking time, typing speed, pauses between bubbles) lives in pace.js / useTwinChat.js, not here.
 //
-// Production: set REACT_APP_TWIN_API_URL to a serverless endpoint (e.g. a Cloudflare Worker that calls the
-// Claude API with TWIN_STYLE_PROMPT + your documents). The UI only depends on askTwin()'s contract:
-// (question, history) => Promise<{ text, bubbles?, expression, followups?, topic? }>.
+// With REACT_APP_TWIN_API_URL set, a real model answers instead (twin-api/: a Cloudflare Worker calling the
+// Claude API), streamed bubble by bubble. The rules below stay as the fallback whenever that API can't answer,
+// and as the whole twin when the variable isn't set. The UI only depends on askTwin()'s contract:
+// (question, history, { onBubble }) => Promise<{ text, bubbles, expression, followups?, topic? }>.
 
 import { person, education, experience, projects, skills, passions } from '../data/profile';
+import { readEvents, toBubbles } from './twinStream';
+
+export { toBubbles };
 
 const API_URL = process.env.REACT_APP_TWIN_API_URL;
-
-// Voice guide for a real LLM backend, so a model-written answer sounds like the rule-based one.
-export const TWIN_STYLE_PROMPT = `You are Astrid Xie's digital twin on her personal website. Speak as Astrid, in first person.
-Sound like a friendly person texting, not a resume: contractions, plain words, no bullet lists, no headings.
-Reply in 1-3 short messages separated by a blank line, each under ~180 characters.
-Answer every question the visitor asked, in order. Use only facts from the provided documents; if you don't know, say so and offer something you do know.
-If asked whether you are an AI or a bot, say you are Astrid's digital twin and point to her email for anything important.
-Match the visitor's language (English or Chinese).`;
 
 // Short, Petersen-style prompts. The first three show before anything is asked; after each answer the twin
 // suggests three that fit the conversation and haven't been asked yet.
@@ -68,27 +64,6 @@ const pick = (arr, rng) => arr[Math.floor(rng() * arr.length) % arr.length];
 const lower1 = (s) => s.charAt(0).toLowerCase() + s.slice(1);
 const article = (w) => (/^[AEIOU]/.test(w) ? 'an' : 'a');
 const listing = (xs, and = 'and') => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} ${and} ${xs[xs.length - 1]}`);
-// split after . ! ? only when followed by a space, so "2.0" and "0.842" stay intact
-const sentences = (s) =>
-  String(s)
-    .split(/(?<=[.!?])\s+|(?<=[。！？])/)
-    .map((x) => x.trim())
-    .filter(Boolean);
-
-// Turn a paragraph into chat-sized bubbles (sentences packed up to ~170 chars each).
-export function toBubbles(text, max = 170) {
-  if (Array.isArray(text)) return text;
-  const parts = String(text)
-    .split(/\n\s*\n/)
-    .flatMap((p) => sentences(p));
-  const out = [];
-  for (const s of parts) {
-    const last = out[out.length - 1];
-    if (last && last.length + s.length + 1 <= max) out[out.length - 1] = `${last} ${s}`;
-    else out.push(s);
-  }
-  return out;
-}
 
 // "Built a thing that..." -> "I built a thing that..."
 const firstPerson = (bullet) => `I ${lower1(bullet)}`;
@@ -537,16 +512,40 @@ export function respond(message, history = [], rng = Math.random) {
   };
 }
 
-export async function askTwin(question, history = [], { rng } = {}) {
+// Ask the model. Bubbles are handed to onBubble as they arrive; resolves once the answer is complete.
+// Throws only if nothing at all came back, so a reply cut off halfway still keeps what was said.
+async function askModel(question, history, onBubble) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: question, messages: history.map(({ role, content }) => ({ role, content })) }),
+    signal: AbortSignal.timeout?.(45000),
+  });
+  if (!res.ok || !res.body) throw new Error(`twin api ${res.status}`);
+  const bubbles = [];
+  let followups;
+  try {
+    for await (const e of readEvents(res.body)) {
+      if (e.type === 'bubble') {
+        bubbles.push(e.text);
+        onBubble(e.text);
+      } else if (e.type === 'followups') followups = e.questions;
+      else if (e.type === 'error') throw new Error(`twin api: ${e.message}`);
+    }
+  } catch (err) {
+    if (!bubbles.length) throw err;
+  }
+  if (!bubbles.length) throw new Error('twin api: empty answer');
+  return { text: bubbles.join('\n\n'), bubbles, expression: 'smile', followups: followups?.length ? followups : undefined };
+}
+
+export async function askTwin(question, history = [], { rng, onBubble = () => {} } = {}) {
   if (API_URL) {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, history, style: TWIN_STYLE_PROMPT }),
-    });
-    if (!res.ok) throw new Error(`twin api ${res.status}`);
-    const j = await res.json();
-    return { ...j, bubbles: j.bubbles || toBubbles(j.text) };
+    try {
+      return await askModel(question, history, onBubble);
+    } catch (err) {
+      console.warn('[twin] API unavailable, answering from the built-in rules:', err.message);
+    }
   }
   return respond(question, history, rng);
 }

@@ -3,6 +3,7 @@ import { THEMES } from './sceneConfig';
 const links = [
   { path: '/', label: 'Home' },
   { path: '/projects', label: 'Projects' },
+  { path: '/design', label: 'Design' },
   { path: '/about', label: 'About' },
   { path: '/resume', label: 'Resume' },
 ];
@@ -17,7 +18,7 @@ export default function SiteHeader({ path, theme, onTheme }) {
     <header className={OVERLAY.includes(path) ? 'site site-over' : 'site'}>
       <nav>
         {links.map((l) => (
-          <a key={l.path} href={`#${l.path}`} aria-current={path === l.path ? 'page' : undefined}>
+          <a key={l.path} href={`#${l.path}`} aria-current={path === l.path || path.startsWith(`${l.path}/`) ? 'page' : undefined}>
             {l.label}
           </a>
         ))}

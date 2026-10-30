@@ -1,0 +1,19 @@
+name = "astrid-twin"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+MODEL = "claude-haiku-5-5"
+EFFORT = "low"
+# Origins allowed to call the API: the live site and `npm start`.
+ALLOWED_ORIGINS = "https://astridxie.github.io,http://localhost:3000"
+
+# 20 questions a minute per visitor IP.
+[[ratelimits]]
+name = "LIMITER"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 20
+  period = 60

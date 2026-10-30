@@ -4,6 +4,7 @@ import SiteHeader from './components/SiteHeader';
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import ProjectsPage from './pages/ProjectsPage';
+import DesignPage from './pages/DesignPage';
 import ResumePage from './pages/ResumePage';
 import LifePage from './pages/LifePage';
 import LabPage from './pages/LabPage';
@@ -16,6 +17,7 @@ const routes = {
   '/': HomePage,
   '/about': AboutPage,
   '/projects': ProjectsPage,
+  '/design': DesignPage,
   '/resume': ResumePage,
   '/life': LifePage,
   '/lab': LabPage,
@@ -61,11 +63,12 @@ function useSiteTheme() {
 export default function App() {
   const path = useHashPath();
   const [theme, nextTheme] = useSiteTheme();
-  const Page = routes[path] || HomePage;
+  // #/design/<id> is a case study inside the design page
+  const Page = routes[path] || (path.startsWith('/design/') ? DesignPage : HomePage);
   return (
     <>
       <SiteHeader path={path} theme={theme} onTheme={nextTheme} />
-      <Page theme={theme} />
+      <Page theme={theme} path={path} />
       <footer className="pfoot">
         <span>© {new Date().getFullYear()} {person.name}</span>
         <span className="pfoot-links">

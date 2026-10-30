@@ -392,17 +392,27 @@ main h2 {
 .proj {
   display: flex;
   flex-direction: column;
+  transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* the frame clips the zoomed image; the CTA slides up from its bottom edge on hover */
+.thumb-frame {
+  position: relative;
+  display: block;
+  margin-bottom: 14px;
+  overflow: hidden;
+  border-radius: 3px;
+  border: 1px solid var(--rule);
+  background: var(--sheet);
+  transition: border-color 0.25s, box-shadow 0.35s;
 }
 
 .thumb {
   display: block;
   width: 100%;
   aspect-ratio: 16 / 10;
-  margin-bottom: 14px;
   object-fit: cover;
-  border-radius: 3px;
-  background: var(--sheet);
-  border: 1px solid var(--rule);
+  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1), filter 0.35s;
 }
 
 .thumb-empty {
@@ -410,6 +420,61 @@ main h2 {
   place-items: center;
   font-size: 34px;
   color: var(--muted);
+}
+
+.thumb-cta {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  padding: 4px 9px;
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.25s, transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.proj .pb-hd .t {
+  transition: color 0.2s;
+}
+
+.proj:is(:hover, :focus-within) {
+  transform: translateY(-4px);
+}
+
+.proj:is(:hover, :focus-within) .thumb-frame {
+  border-color: var(--accent);
+  box-shadow: 0 14px 34px -14px var(--accent-dim);
+}
+
+.proj:is(:hover, :focus-within) .thumb {
+  transform: scale(1.045);
+  filter: brightness(1.08);
+}
+
+.proj:is(:hover, :focus-within) .thumb-cta {
+  opacity: 1;
+  transform: none;
+}
+
+.proj:is(:hover, :focus-within) .pb-hd .t {
+  color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .proj,
+  .thumb,
+  .thumb-cta {
+    transition: none;
+  }
+  .proj:is(:hover, :focus-within),
+  .proj:is(:hover, :focus-within) .thumb {
+    transform: none;
+  }
 }
 
 .proj p {
@@ -449,6 +514,196 @@ main h2 {
   }
 }
 
+/* ---------- design case studies ---------- */
+
+.case {
+  flex: 1;
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: clamp(28px, 6vw, 64px) 16px 56px;
+}
+
+.case-back {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.case-back:hover {
+  color: var(--accent);
+}
+
+.case-head {
+  margin-top: 22px;
+  max-width: 660px;
+}
+
+.case-head .proj-meta {
+  margin: 16px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.case-hero {
+  display: block;
+  width: 100%;
+  max-height: 560px;
+  margin-top: 32px;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid var(--rule);
+}
+
+.case-video {
+  aspect-ratio: 16 / 9;
+  max-height: none;
+  overflow: hidden;
+  background: #000;
+}
+
+.case-video iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.case-watch {
+  display: inline-block;
+  margin-top: 10px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.case-watch:hover {
+  color: var(--accent);
+}
+
+.case-sec {
+  padding-top: clamp(28px, 4vw, 40px);
+  border-top: 1px solid var(--rule);
+}
+
+.case-sec > p {
+  max-width: 64ch;
+  margin: 0 0 12px;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--soft);
+}
+
+.case-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px 28px;
+  margin: 6px 0 16px;
+}
+
+.case-items dt {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--accent);
+}
+
+.case-items dd {
+  margin: 5px 0 0;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.case-figs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 18px;
+  margin-top: 14px;
+}
+
+.case-figs figure {
+  margin: 0;
+}
+
+.case-figs .wide {
+  grid-column: 1 / -1;
+}
+
+/* side-by-side figures share one frame shape so rows line up. Images are contained, never cropped,
+   and scale-down keeps small originals (some Wix uploads are ~300px) at their own size instead of blurring them up */
+.case-figs figure:not(.wide) img {
+  aspect-ratio: 4 / 3;
+  object-fit: scale-down;
+}
+
+.case-figs-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.case-figs-3 figure:not(.wide) img {
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.case-figs img {
+  display: block;
+  width: 100%;
+  max-height: 520px;
+  object-fit: contain;
+  border-radius: 3px;
+  border: 1px solid var(--rule);
+  /* most of the source images (renders, diagrams, recordings) sit on black, so letterboxing matches them */
+  background: #000;
+}
+
+.case-figs figcaption {
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.case-next {
+  display: block;
+  margin-top: clamp(40px, 6vw, 64px);
+  padding-top: 22px;
+  border-top: 1px solid var(--rule);
+  font-family: var(--serif);
+  font-size: 22px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.case-next span {
+  display: block;
+  margin-bottom: 4px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.case-next:hover {
+  color: var(--accent);
+}
+
+@media (max-width: 760px) {
+  .case-figs-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .case-figs,
+  .case-figs-3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* ---------- home (Petersen-style landing) ---------- */
 
 .home {
@@ -466,8 +721,8 @@ main h2 {
 }
 
 .home .cx {
-  min-height: 100vh;
-  min-height: 100svh;
+  min-height: calc(100vh + var(--grow, 0px));
+  min-height: calc(100svh + var(--grow, 0px));
   padding-top: clamp(72px, 9vh, 96px);
 }
 
@@ -546,7 +801,7 @@ main h2 {
 
 /* the latest exchange, at the top of the ask panel */
 .tw-exchange {
-  max-height: min(34vh, 320px);
+  max-height: min(28vh, 280px);
   overflow-y: auto;
   padding-bottom: 14px;
   border-bottom: 1px solid var(--panel-line);
@@ -885,11 +1140,32 @@ main h2 {
   z-index: 1;
 }
 
+/* the backdrop keeps the height of the first screen when the conversation lengthens the page (--grow) */
 .cx > .cx-canvas,
 .cx > .cx-vignette {
   position: absolute;
-  inset: 0;
+  inset: 0 0 auto;
+  height: calc(100% - var(--grow, 0px));
   z-index: 0;
+}
+
+/* ...and the floor fades out where that first screen ends */
+.cx::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% - var(--grow, 0px) - 160px);
+  height: 160px;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(transparent, var(--bg, #040607));
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.cx:has(.tw-exchange)::after {
+  opacity: 1;
 }
 
 .cx-canvas {
@@ -934,8 +1210,10 @@ main h2 {
 /* A · Descent. Sizes, fonts and colours arrive as custom properties from sceneVars() (sceneConfig.js). */
 
 .cx-descent {
-  min-height: 100vh;
-  background: radial-gradient(ellipse 80% 60% at 50% 55%, var(--bg-glow) 0%, var(--bg) 72%);
+  min-height: calc(100vh + var(--grow, 0px));
+  background: radial-gradient(ellipse 80% 60% at 50% 55%, var(--bg-glow) 0%, var(--bg) 72%) 0 0 / 100%
+      calc(100% - var(--grow, 0px)) no-repeat,
+    var(--bg);
 }
 
 .cx-depth {

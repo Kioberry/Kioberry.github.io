@@ -3,14 +3,20 @@ import ProjectLinks from '../components/ProjectLinks';
 import { projectCategories, projects } from '../data/profile';
 
 // Thumbnails live in public/projects/; a project's `thumb` in profile.js is just the file name.
+// The frame links to the project's first link (the title already does, so it stays out of the tab order).
 function Thumb({ project }) {
-  if (project.thumb) {
-    return <img className="thumb" src={`${process.env.PUBLIC_URL}/projects/${project.thumb}`} alt="" loading="lazy" />;
-  }
+  const pic = project.thumb ? (
+    <img className="thumb" src={`${process.env.PUBLIC_URL}/projects/${project.thumb}`} alt="" loading="lazy" />
+  ) : (
+    <span className="thumb thumb-empty">{project.glyph}</span>
+  );
+  const link = project.links[0];
+  if (!link) return <div className="thumb-frame" aria-hidden="true">{pic}</div>;
   return (
-    <span className="thumb thumb-empty" aria-hidden="true">
-      {project.glyph}
-    </span>
+    <a className="thumb-frame" href={link.url} target="_blank" rel="noreferrer" tabIndex={-1} aria-hidden="true">
+      {pic}
+      <span className="thumb-cta">{link.label} ↗</span>
+    </a>
   );
 }
 

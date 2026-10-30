@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { askTwin, pickFollowups, suggestedQuestions } from './twinAgent';
+import { askTwin, pickFollowups, suggestedQuestions, toBubbles } from './twinAgent';
 import { chunkDelay, gapMs, nextStop, thinkingMs } from './pace';
 
 const NO_BUBBLES = [];
+const GLITCH = { bubbles: ['Hmm, my connection just glitched.', 'Mind asking that again?'], expression: 'think' };
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const SpeechRecognition = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
 const canSpeak = typeof window !== 'undefined' && 'speechSynthesis' in window;
 const reduceMotion =
@@ -11,13 +13,15 @@ const reduceMotion =
 // Conversation state shared by every home layout.
 //
 // The twin answers like a person in a chat:
-//   thinking -> talking (bubble 1, typed at a human rhythm) -> typing gap -> talking (bubble 2) ... -> idle
+//   thinking -> typing gap -> talking (bubble 1, typed at a human rhythm) -> typing gap -> talking (bubble 2) ... -> idle
+// A model answer streams in bubble by bubble, so the next bubble may not exist yet when the previous one is
+// done: the twin then stays in the typing gap until it arrives or the answer ends (`streaming` turns false).
 // Visitors can keep asking while it talks: new questions wait in a queue and are answered in order.
 // Conversation mode reads each bubble aloud and keeps the text in step with the voice.
 export default function useTwinChat() {
-  const [answers, setAnswers] = useState([]); // [{ q, bubbles, topic, project, company, expression }]
+  const [answers, setAnswers] = useState([]); // [{ q, bubbles, streaming, topic, project, company, expression }]
   const [active, setActive] = useState(-1); // exchange being revealed
-  const [bubble, setBubble] = useState(0); // bubble being typed in the active exchange
+  const [bubble, setBubble] = useState(0); // bubble being typed in the active exchange (-1: none yet)
   const [typed, setTyped] = useState(0); // characters shown of that bubble
   const [phase, setPhase] = useState('idle'); // idle | thinking | talking | gap
   const [asking, setAsking] = useState('');
@@ -32,7 +36,9 @@ export default function useTwinChat() {
 
   const current = answers[active] || null;
   const bubbles = current ? current.bubbles : NO_BUBBLES;
+  const streaming = Boolean(current?.streaming);
   const line = bubbles[bubble] || '';
+  const nextLine = bubbles[bubble + 1];
 
   // ---- the talking rhythm --------------------------------------------------------------------
   useEffect(() => {
@@ -46,20 +52,23 @@ export default function useTwinChat() {
       return () => clearTimeout(id);
     }
     if (voice && canSpeak && speaking.current) return undefined; // let the sentence finish being spoken
-    if (bubble < bubbles.length - 1) setPhase('gap');
-    else setPhase('idle');
+    setPhase(bubble < bubbles.length - 1 || streaming ? 'gap' : 'idle');
     return undefined;
-  }, [phase, typed, line, bubble, bubbles.length, voice, spokenTick]);
+  }, [phase, typed, line, bubble, bubbles.length, streaming, voice, spokenTick]);
 
   useEffect(() => {
     if (phase !== 'gap') return undefined;
+    if (nextLine === undefined) {
+      if (!streaming) setPhase('idle'); // the answer ended here; otherwise keep "typing" until the next bubble arrives
+      return undefined;
+    }
     const id = setTimeout(() => {
       setBubble((b) => b + 1);
       setTyped(0);
       setPhase('talking');
-    }, reduceMotion ? 0 : gapMs(bubbles[bubble + 1]));
+    }, reduceMotion || bubble < 0 ? 0 : gapMs(nextLine));
     return () => clearTimeout(id);
-  }, [phase, bubble, bubbles]);
+  }, [phase, bubble, nextLine, streaming]);
 
   // ---- conversation mode: speak each bubble, reveal words as they are spoken ----------------------
   useEffect(() => {
@@ -89,23 +98,44 @@ export default function useTwinChat() {
     async (q) => {
       setPhase('thinking');
       setAsking(q);
+      const index = answers.length;
       const history = answers.flatMap((a) => [
         { role: 'user', content: a.q },
         { role: 'assistant', content: a.bubbles.join('\n\n'), topic: a.topic, topics: a.topics, project: a.project, company: a.company },
       ]);
-      let res;
-      try {
-        [res] = await Promise.all([askTwin(q, history), new Promise((r) => setTimeout(r, reduceMotion ? 0 : thinkingMs(q)))]);
-      } catch {
-        res = { bubbles: ['Hmm, my connection just glitched.', 'Mind asking that again?'], expression: 'think' };
-      }
-      const asked = [...answers.map((a) => a.q), q];
-      setAnswers((prev) => [...prev, { q, ...res, bubbles: res.bubbles || [res.text] }]);
-      setActive(answers.length);
-      setBubble(0);
+      const finished = (r) => ({ q, ...r, bubbles: r.bubbles?.length ? r.bubbles : toBubbles(r.text || ''), streaming: false });
+      const update = (patch) => setAnswers((prev) => prev.map((a, i) => (i === index ? { ...a, ...patch } : a)));
+
+      // bubbles that stream in before the exchange is on screen are collected, later ones are shown as they come
+      const got = [];
+      let shown = false;
+      let firstBubble;
+      const arrived = new Promise((r) => {
+        firstBubble = r;
+      });
+      const onBubble = (b) => {
+        got.push(b);
+        if (shown) update({ bubbles: [...got] });
+        else firstBubble();
+      };
+      let final = null;
+      const reply = askTwin(q, history, { onBubble })
+        .catch(() => (got.length ? { bubbles: got, expression: 'smile' } : GLITCH))
+        .then((r) => (final = r));
+
+      // a human pause first, then start talking as soon as there is something to say
+      await Promise.all([Promise.race([arrived, reply]), wait(reduceMotion ? 0 : thinkingMs(q))]);
+      shown = true;
+      const doneEarly = final;
+      setAnswers((prev) => [...prev, doneEarly ? finished(doneEarly) : { q, bubbles: [...got], streaming: true }]);
+      setActive(index);
+      setBubble(-1);
       setTyped(0);
-      setFollowups(res.followups || pickFollowups(asked, res.topic));
-      setPhase('talking');
+      setPhase('gap');
+
+      const res = await reply;
+      if (!doneEarly) update(finished(res));
+      setFollowups(res.followups || pickFollowups([...answers.map((a) => a.q), q], res.topic));
     },
     [answers]
   );
@@ -137,12 +167,12 @@ export default function useTwinChat() {
 
   // click on the answer: finish the current answer at once
   const skip = () => {
-    if (!current || phase === 'thinking') return;
+    if (!current || phase === 'thinking' || !bubbles.length) return;
     if (canSpeak) window.speechSynthesis.cancel();
     speaking.current = false;
     setBubble(bubbles.length - 1);
     setTyped(bubbles[bubbles.length - 1].length);
-    setPhase('idle');
+    setPhase(streaming ? 'gap' : 'idle');
   };
 
   const shuffleFollowups = () => {
@@ -169,7 +199,8 @@ export default function useTwinChat() {
 
   // what the panel shows: every exchange so far, the active one partly revealed
   const exchanges = answers.map((a, i) => {
-    if (i !== active || phase === 'idle') return { q: a.q, lines: a.bubbles, done: true };
+    if (i !== active || phase === 'idle' || phase === 'thinking') return { q: a.q, lines: a.bubbles, done: true };
+    if (phase === 'gap') return { q: a.q, lines: a.bubbles.slice(0, bubble + 1), done: false };
     return { q: a.q, lines: [...a.bubbles.slice(0, bubble), a.bubbles[bubble].slice(0, typed)], done: false };
   });
 

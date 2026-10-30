@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import AsciiPortrait from './AsciiPortrait';
 import AsciiFigure from './AsciiFigure';
 import TwinPanel from './TwinPanel';
@@ -13,6 +14,40 @@ const LABEL = "ASCII portrait of Astrid's digital twin";
 // light directions (where the light comes from, screen space) per scene
 const FROM_HORIZON = [0, 1];
 const FROM_MOON = [-0.6, -0.8];
+
+// The ask panel at the foot of a full-screen scene. Before the first question it sits at the bottom of the
+// screen. Once the conversation fills in, the scene grows by the conversation's height (--grow), so the
+// panel's top edge stays put and the page gets longer (as on matthewpetersen.ca) instead of the panel
+// climbing over the figure. While the visitor follows along, the page scrolls to keep the input in view.
+function Dock({ chat }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const dock = ref.current;
+    const scene = dock.parentElement;
+    const smooth = !window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+    let last = dock.offsetHeight;
+    const ro = new ResizeObserver(() => {
+      const panel = dock.querySelector('.tw-panel');
+      const talk = dock.querySelector('.tw-exchange');
+      const grow = talk ? talk.offsetHeight + parseFloat(getComputedStyle(panel).rowGap || 0) : 0;
+      scene.style.setProperty('--grow', `${grow}px`);
+      const h = dock.offsetHeight;
+      const bottom = panel.getBoundingClientRect().bottom + 12;
+      // follow only if the panel's foot was on screen before it grew, so a visitor who scrolled up stays put
+      if (h > last && bottom > window.innerHeight && bottom - (h - last) <= window.innerHeight + 120) {
+        window.scrollTo({ top: window.scrollY + bottom - window.innerHeight, behavior: smooth ? 'smooth' : 'auto' });
+      }
+      last = h;
+    });
+    ro.observe(dock);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div ref={ref} className="cx-dock">
+      <TwinPanel chat={chat} />
+    </div>
+  );
+}
 
 function Figure({ chat, light, className = '' }) {
   return (
@@ -73,9 +108,7 @@ export function LayoutDescent({ cfg = DEFAULTS }) {
           AI engineer · building agents that ship
         </p>
       )}
-      <div className="cx-dock">
-        <TwinPanel chat={chat} />
-      </div>
+      <Dock chat={chat} />
       <div className="cx-texture" aria-hidden="true" />
     </div>
   );
@@ -100,9 +133,7 @@ export function LayoutDreamfield() {
       </p>
       <Figure chat={chat} light={FROM_MOON} className="reflect grounded" />
       <Motes pos={pos} />
-      <div className="cx-dock">
-        <TwinPanel chat={chat} />
-      </div>
+      <Dock chat={chat} />
     </div>
   );
 }
@@ -134,9 +165,7 @@ export function LayoutNebula() {
         </div>
       </div>
       <Motes pos={pos} count={30} />
-      <div className="cx-dock">
-        <TwinPanel chat={chat} />
-      </div>
+      <Dock chat={chat} />
     </div>
   );
 }
