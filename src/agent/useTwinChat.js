@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { askTwin, pickFollowups, suggestedQuestions, toBubbles } from './twinAgent';
 import { chunkDelay, gapMs, nextStop, thinkingMs } from './pace';
+import { spendVoice, voiceBudgetLeft, voicedSpeech } from '../twin3d/speech';
 
 const NO_BUBBLES = [];
 const GLITCH = { bubbles: ['Hmm, my connection just glitched.', 'Mind asking that again?'], expression: 'think' };
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const readyAvatar = (speaker) => (speaker?.current?.ready ? speaker.current : null);
 const SpeechRecognition = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
 const canSpeak = typeof window !== 'undefined' && 'speechSynthesis' in window;
+const AudioCtx = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext);
 const reduceMotion =
   typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -18,7 +21,11 @@ const reduceMotion =
 // done: the twin then stays in the typing gap until it arrives or the answer ends (`streaming` turns false).
 // Visitors can keep asking while it talks: new questions wait in a queue and are answered in order.
 // Conversation mode reads each bubble aloud and keeps the text in step with the voice.
-export default function useTwinChat() {
+//
+// With a 3D avatar (`speaker`, a ref to TalkingAvatar), the avatar says every bubble, as on matthewpetersen.ca:
+// aloud when the twin has a voice, else mouthing it silently, and the text appears word by word as it is said.
+// Conversation mode then means hands-free: once the twin has answered, it listens for the next question.
+export default function useTwinChat({ speaker } = {}) {
   const [answers, setAnswers] = useState([]); // [{ q, bubbles, streaming, topic, project, company, expression }]
   const [active, setActive] = useState(-1); // exchange being revealed
   const [bubble, setBubble] = useState(0); // bubble being typed in the active exchange (-1: none yet)
@@ -32,6 +39,9 @@ export default function useTwinChat() {
   const [followups, setFollowups] = useState(suggestedQuestions);
   const recognition = useRef(null);
   const speaking = useRef(false);
+  const audioCtx = useRef(null); // made when conversation mode is switched on, inside the click, so it may play
+  const voiceLines = useRef(new Map()); // line -> Promise of its voiced speech
+  const source = useRef(null);
   const [spokenTick, setSpokenTick] = useState(0);
 
   const current = answers[active] || null;
@@ -39,22 +49,24 @@ export default function useTwinChat() {
   const streaming = Boolean(current?.streaming);
   const line = bubbles[bubble] || '';
   const nextLine = bubbles[bubble + 1];
+  const avatar = () => readyAvatar(speaker);
 
   // ---- the talking rhythm --------------------------------------------------------------------
   useEffect(() => {
     if (phase !== 'talking') return undefined;
     if (typed < line.length) {
+      if (readyAvatar(speaker)) return undefined; // the avatar's speech reveals the words (see the avatar effect)
       // word by word, with pauses where a speaker would breathe. In conversation mode the voice drives the
       // text (see the speak effect) and this timer is only a slow fallback.
       const j = nextStop(line, typed);
-      const ms = typed === 0 ? 0 : chunkDelay(line, typed, j) * (voice && canSpeak ? 2.2 : 1);
+      const ms = typed === 0 ? 0 : chunkDelay(line, typed, j) * (voice ? 2.2 : 1);
       const id = setTimeout(() => setTyped((n) => Math.max(n, j)), reduceMotion ? 0 : ms);
       return () => clearTimeout(id);
     }
-    if (voice && canSpeak && speaking.current) return undefined; // let the sentence finish being spoken
+    if (speaking.current) return undefined; // let the sentence finish being spoken
     setPhase(bubble < bubbles.length - 1 || streaming ? 'gap' : 'idle');
     return undefined;
-  }, [phase, typed, line, bubble, bubbles.length, streaming, voice, spokenTick]);
+  }, [phase, typed, line, bubble, bubbles.length, streaming, voice, spokenTick, speaker]);
 
   useEffect(() => {
     if (phase !== 'gap') return undefined;
@@ -62,33 +74,99 @@ export default function useTwinChat() {
       if (!streaming) setPhase('idle'); // the answer ended here; otherwise keep "typing" until the next bubble arrives
       return undefined;
     }
+    // fetch its voice while "typing"
+    if (readyAvatar(speaker)) readyAvatar(speaker).prepare(nextLine);
+    else if (voice) fetchVoice(nextLine).catch(() => {});
     const id = setTimeout(() => {
       setBubble((b) => b + 1);
       setTyped(0);
       setPhase('talking');
     }, reduceMotion || bubble < 0 ? 0 : gapMs(nextLine));
     return () => clearTimeout(id);
-  }, [phase, bubble, nextLine, streaming]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, bubble, nextLine, streaming, speaker, voice]);
 
-  // ---- conversation mode: speak each bubble, reveal words as they are spoken ----------------------
+  // ---- the avatar says each bubble, revealing words as they are said ---------------------------------
+  const isTalking = phase === 'talking';
   useEffect(() => {
-    if (!canSpeak) return undefined;
-    window.speechSynthesis.cancel();
+    const a = avatar();
+    if (!a || !isTalking || !line) return undefined;
+    let live = true;
+    speaking.current = true;
+    a.say(line, (end) => live && setTyped((n) => Math.max(n, end))).then(() => {
+      if (!live) return;
+      speaking.current = false;
+      setTyped(line.length);
+      setSpokenTick((t) => t + 1);
+    });
+    return () => {
+      live = false;
+      speaking.current = false;
+    };
+    // a new bubble starts the next line; the avatar is looked up when it does
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, bubble, isTalking]);
+
+  // ---- conversation mode without an avatar: the twin's voice (twin-api /tts), else the browser's ----------
+  const fetchVoice = (l) => {
+    if (!audioCtx.current || voiceBudgetLeft() <= 0) return Promise.reject(new Error('no voice'));
+    if (!voiceLines.current.has(l)) voiceLines.current.set(l, voicedSpeech(l, audioCtx.current));
+    return voiceLines.current.get(l);
+  };
+  const hush = () => {
+    if (source.current) {
+      source.current.onended = null;
+      source.current.stop();
+      source.current = null;
+    }
+    if (canSpeak) window.speechSynthesis.cancel();
+  };
+  useEffect(() => {
+    if (avatar()) return undefined;
+    hush();
     speaking.current = false;
     if (!voice || phase !== 'talking' || !line) return undefined;
-    const u = new SpeechSynthesisUtterance(line);
-    u.lang = /[一-鿿]/.test(line) ? 'zh-CN' : 'en-US';
-    u.rate = 1.02;
-    u.onboundary = (e) => setTyped((n) => Math.max(n, Math.min(line.length, e.charIndex + (e.charLength || 1))));
-    u.onend = () => {
+    let live = true;
+    const timers = [];
+    const reveal = (n) => live && setTyped((t) => Math.max(t, Math.min(line.length, n)));
+    const done = () => {
+      if (!live) return;
       speaking.current = false;
       setTyped(line.length);
       setSpokenTick((t) => t + 1);
     };
-    u.onerror = u.onend;
+    const browserVoice = () => {
+      if (!canSpeak) return done();
+      const u = new SpeechSynthesisUtterance(line);
+      u.lang = /[一-鿿]/.test(line) ? 'zh-CN' : 'en-US';
+      u.rate = 1.02;
+      u.onboundary = (e) => reveal(e.charIndex + (e.charLength || 1));
+      u.onend = done;
+      u.onerror = done;
+      window.speechSynthesis.speak(u);
+      return undefined;
+    };
     speaking.current = true;
-    window.speechSynthesis.speak(u);
-    return () => window.speechSynthesis.cancel();
+    fetchVoice(line)
+      .then((s) => {
+        if (!live) return;
+        voiceLines.current.delete(line);
+        spendVoice(s.ms);
+        const src = audioCtx.current.createBufferSource();
+        src.buffer = s.audio;
+        src.connect(audioCtx.current.destination);
+        src.onended = done;
+        source.current = src;
+        src.start();
+        s.words.forEach((_, i) => timers.push(setTimeout(() => reveal(s.ends[i]), s.wtimes[i])));
+        if (nextLine) fetchVoice(nextLine).catch(() => {}); // the next bubble's voice, while this one is said
+      })
+      .catch(() => live && browserVoice());
+    return () => {
+      live = false;
+      timers.forEach(clearTimeout);
+      hush();
+    };
     // re-run only when a new bubble starts or the mode changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voice, active, bubble, phase === 'talking']);
@@ -168,7 +246,8 @@ export default function useTwinChat() {
   // click on the answer: finish the current answer at once
   const skip = () => {
     if (!current || phase === 'thinking' || !bubbles.length) return;
-    if (canSpeak) window.speechSynthesis.cancel();
+    avatar()?.stop();
+    hush();
     speaking.current = false;
     setBubble(bubbles.length - 1);
     setTyped(bubbles[bubbles.length - 1].length);
@@ -197,6 +276,14 @@ export default function useTwinChat() {
     r.start();
   };
 
+  // hands-free: after an answer, listen for the next question
+  useEffect(() => {
+    if (phase !== 'idle' || !voice || !avatar() || !answers.length || queue.length) return;
+    listen();
+    // only when an answer ends, not when the mic stops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
   // what the panel shows: every exchange so far, the active one partly revealed
   const exchanges = answers.map((a, i) => {
     if (i !== active || phase === 'idle' || phase === 'thinking') return { q: a.q, lines: a.bubbles, done: true };
@@ -223,7 +310,13 @@ export default function useTwinChat() {
     followups,
     shuffleFollowups,
     voice,
-    toggleVoice: () => setVoice((v) => !v),
+    toggleVoice: () => {
+      if (!voice && AudioCtx) {
+        audioCtx.current = audioCtx.current || new AudioCtx();
+        audioCtx.current.resume();
+      }
+      setVoice((v) => !v);
+    },
     listening,
     listen,
     canListen: Boolean(SpeechRecognition),

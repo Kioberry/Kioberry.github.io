@@ -9,6 +9,7 @@ import ResumePage from './pages/ResumePage';
 import LifePage from './pages/LifePage';
 import LabPage from './pages/LabPage';
 import PlaygroundPage from './pages/PlaygroundPage';
+import VoicesPage from './pages/VoicesPage';
 import { person } from './data/profile';
 import { THEME_IDS } from './components/sceneConfig';
 
@@ -22,6 +23,7 @@ const routes = {
   '/life': LifePage,
   '/lab': LabPage,
   '/playground': PlaygroundPage,
+  '/voices': VoicesPage,
 };
 
 function useHashPath() {

@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "bounce-easing",
+        "value": "tw-bounce",
+        "createdAt": "2026-10-30T19:20:14.460Z",
+        "reason": "Claude triage: keyframe name only; curve is ease-in-out with a 4px rise, the standard chat typing-dots indicator (pre-existing, committed in dcdfaac)"
+      }
+    ]
+  }
+}

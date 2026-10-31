@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AsciiPortrait from './AsciiPortrait';
 import AsciiFigure from './AsciiFigure';
 import TwinPanel from './TwinPanel';
+import TalkingAvatar from '../twin3d/TalkingAvatar';
 import useTwinChat from '../agent/useTwinChat';
 import { GridTunnel, Motes, StarField, useParallax } from './CyberFx';
 import { DEFAULTS, extrudeShadow, lookFrom, sceneVars, triplet } from './sceneConfig';
@@ -10,6 +11,8 @@ import { DEFAULTS, extrudeShadow, lookFrom, sceneVars, triplet } from './sceneCo
 const TWIN = `${process.env.PUBLIC_URL}/twin`;
 const media = { video: `${TWIN}/idle.mp4`, poster: `${TWIN}/portrait.png` };
 const LABEL = "ASCII portrait of Astrid's digital twin";
+// The 3D twin (avatar/README.md). Until the model is published, the video twin stands in.
+const AVATAR = process.env.REACT_APP_TWIN_AVATAR && `${process.env.PUBLIC_URL}/${process.env.REACT_APP_TWIN_AVATAR.replace(/^\//, '')}`;
 
 // light directions (where the light comes from, screen space) per scene
 const FROM_HORIZON = [0, 1];
@@ -78,7 +81,9 @@ export function LayoutPetersen() {
 // video, so she stays put, and the glyphs near the pointer scramble instead. Every knob is in `cfg`
 // (sceneConfig.js); #/playground edits it live.
 export function LayoutDescent({ cfg = DEFAULTS }) {
-  const chat = useTwinChat();
+  const avatar = useRef(null);
+  const [use3d, setUse3d] = useState(Boolean(AVATAR));
+  const chat = useTwinChat({ speaker: avatar });
   const [ref, pos] = useParallax();
   const c = cfg.colors;
   return (
@@ -95,9 +100,23 @@ export function LayoutDescent({ cfg = DEFAULTS }) {
         dustColor={triplet(c.high)}
       />
       <div className="cx-vignette" aria-hidden="true" />
-      <div className={`fig-stage${cfg.reflect ? ' reflect' : ''}`}>
-        <AsciiFigure {...media} font={cfg.asciiFont} look={lookFrom(cfg, FROM_HORIZON)} talking={chat.talking} label={LABEL} />
-      </div>
+      {use3d ? (
+        <div className="fig-stage avatar-stage">
+          <TalkingAvatar
+            ref={avatar}
+            url={AVATAR}
+            colors={{ shadow: c.shadow, mid: c.mid, high: c.high }}
+            view={cfg.avatarView}
+            cell={cfg.avatarCell}
+            label={LABEL}
+            onFail={() => setUse3d(false)}
+          />
+        </div>
+      ) : (
+        <div className={`fig-stage${cfg.reflect ? ' reflect' : ''}`}>
+          <AsciiFigure {...media} font={cfg.asciiFont} look={lookFrom(cfg, FROM_HORIZON)} talking={chat.talking} label={LABEL} />
+        </div>
+      )}
       <h1 className="tw-name cx-depth" style={{ '--z': 1.6 }}>
         <span className="tw-name-line extrude" style={{ textShadow: extrudeShadow(cfg) }}>
           Astrid Xie

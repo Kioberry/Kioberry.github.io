@@ -1,6 +1,8 @@
 // Astrid's digital twin API: a Cloudflare Worker between the website and the Claude API.
 //
 // POST { query, messages: [{ role, content }] }  ->  text/event-stream of chat bubbles (format: src/agent/twinStream.js)
+// POST /tts { text, language }                   ->  the twin's voice for one sentence, with word and viseme timings (tts.js)
+// POST /voice-lab { engine, speaker, text }       ->  a voice sample for #/voices, only under `npm run voices` (voiceLab.js)
 //
 // The API key stays here, never in the browser. Only the site's own origins may call it (ALLOWED_ORIGINS), each
 // visitor IP gets LIMITER's quota, and questions and history are capped, so a stranger can't run up the bill.
@@ -8,6 +10,10 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { createBubbler, sse } from '../../src/agent/twinStream.js';
 import { systemPrompt } from './prompt.js';
+import { speak } from './tts.js';
+import { voiceLab } from './voiceLab.js';
+
+export { TtsBudget } from './budget.js';
 
 const MAX_QUESTION = 600; // characters
 const MAX_HISTORY = 12; // earlier messages kept (six exchanges)
@@ -103,8 +109,26 @@ export default {
     if (!headers) return new Response('Forbidden', { status: 403 });
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
     if (request.method !== 'POST') return new Response('Method not allowed', { status: 405, headers });
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    if (new URL(request.url).pathname === '/voice-lab') {
+      const { status, json, audio, type } = await voiceLab(env, await request.json().catch(() => null)).catch((err) => {
+        console.error('[twin] voice lab failed:', err);
+        return { status: 502, json: { error: String(err?.message || err) } };
+      });
+      return audio ? new Response(audio, { headers: { ...headers, 'Content-Type': type } }) : Response.json(json, { status, headers });
+    }
+    if (new URL(request.url).pathname === '/tts') {
+      if (env.TTS_LIMITER && !(await env.TTS_LIMITER.limit({ key: ip })).success) {
+        return Response.json({ error: 'busy' }, { status: 429, headers });
+      }
+      const { status, json } = await speak(env, await request.json().catch(() => null)).catch((err) => {
+        console.error('[twin] tts failed:', err);
+        return { status: 500, json: { error: 'internal' } };
+      });
+      return Response.json(json, { status, headers });
+    }
     if (env.LIMITER) {
-      const { success } = await env.LIMITER.limit({ key: request.headers.get('CF-Connecting-IP') || 'unknown' });
+      const { success } = await env.LIMITER.limit({ key: ip });
       if (!success) return new Response('Too many questions, try again in a minute', { status: 429, headers });
     }
     const messages = toMessages(await request.json().catch(() => null));

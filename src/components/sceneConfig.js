@@ -135,6 +135,10 @@ const BASE = {
   nameGlow: 0.45,
   asciiFont: 'Fira Code',
   answerFont: 'Literata',
+  // 3D twin (when REACT_APP_TWIN_AVATAR is set): TalkingHead camera view (head | upper | mid | full) and glyph
+  // cell size in CSS px, as on matthewpetersen.ca
+  avatarView: 'head',
+  avatarCell: 13,
   // ASCII
   cols: 140,
   ramp: 'classic',

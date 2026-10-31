@@ -1,5 +1,34 @@
 import { useEffect, useRef } from 'react';
 
+// URLs and emails in an answer become links. Trailing punctuation stays text ("…/peeko." links without the dot),
+// and the shown text drops the scheme and a bare trailing slash. A URL still being typed links as far as it goes.
+const LINK = /(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+|[\w.+-]+@[\w-]+(?:\.[\w-]+)+)/g;
+
+export function linkify(text) {
+  return text.split(LINK).map((part, i) => {
+    if (i % 2 === 0) return part;
+    const [, raw, tail] = part.match(/^(.*?)([.,;:!?)\]'"]*)$/);
+    if (!raw) return part;
+    const isEmail = !/^(https?:|www\.)/.test(raw) && raw.includes('@');
+    const href = isEmail ? `mailto:${raw}` : raw.startsWith('www.') ? `https://${raw}` : raw;
+    const shown = isEmail ? raw : raw.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    return (
+      <span key={i}>
+        <a
+          className="tw-link"
+          href={href}
+          target={isEmail ? undefined : '_blank'}
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()} // the conversation's click-to-skip shouldn't fire too
+        >
+          {shown}
+        </a>
+        {tail}
+      </span>
+    );
+  });
+}
+
 // The ask panel, modelled on matthewpetersen.ca, now a short conversation instead of a single answer:
 // earlier exchanges stay above (dimmed), the latest question sits under them, and the answer arrives as a few
 // chat bubbles on ↳ lines, typed at a human pace with a "typing" pause between bubbles. Questions asked while
@@ -22,7 +51,7 @@ function Conversation({ chat }) {
             <p className="tw-reply" key={j}>
               <span aria-hidden="true">↳</span>
               <span className="tw-a">
-                {l}
+                {linkify(l)}
                 {!x.done && j === x.lines.length - 1 && talking && <span className="caret" />}
               </span>
             </p>

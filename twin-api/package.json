@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
+    "voices": "wrangler dev --var VOICE_LAB:on",
     "deploy": "wrangler deploy"
   },
   "dependencies": {

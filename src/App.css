@@ -840,6 +840,21 @@ main h2 {
   color: var(--ink);
 }
 
+.tw-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+  transition: color 0.15s ease;
+}
+
+.tw-link:hover,
+.tw-link:focus-visible {
+  color: var(--accent);
+}
+
 .caret {
   display: inline-block;
   width: 0.55em;
@@ -1259,6 +1274,26 @@ main h2 {
 .fig-stage .fig {
   width: auto;
   height: 100%;
+}
+
+/* the 3D twin: a square canvas the height of the stage; she can be turned by dragging */
+.avatar-stage {
+  aspect-ratio: 1;
+  pointer-events: auto;
+}
+
+.avatar3d,
+.avatar3d-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.avatar3d-canvas canvas {
+  display: block;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .cx-descent .cx-dock {
@@ -1829,6 +1864,269 @@ main h2 {
     font-size: 13px;
     padding: 4px 6px;
   }
+}
+
+/* Temporary: the voice audition page (#/voices) */
+.vx {
+  flex: 1;
+  width: 100%;
+  max-width: var(--wrap);
+  margin: 0 auto;
+  padding: 24px clamp(16px, 4vw, 52px) 96px;
+}
+
+.vx-head h1 {
+  margin: 0 0 8px;
+  font-family: var(--pixel);
+  font-weight: 400;
+  font-size: clamp(22px, 3.4vw, 34px);
+  color: var(--title);
+}
+
+.vx-head > p:not(.pb-lbl) {
+  max-width: 62ch;
+  margin: 0 0 18px;
+  color: var(--soft);
+  line-height: 1.55;
+}
+
+.vx-head textarea {
+  display: block;
+  width: 100%;
+  max-width: 760px;
+  padding: 12px 14px;
+  font: 16px/1.55 var(--serif);
+  color: var(--ink);
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.vx-head textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.vx-presets {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.vx .chip {
+  cursor: pointer;
+}
+
+.vx .chip[aria-pressed='true'] {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.vx-engine {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+}
+
+.vx-engine-head h2 {
+  margin: 0 0 6px;
+  font-family: var(--display);
+  font-size: 22px;
+  color: var(--title);
+}
+
+.vx-engine-head p {
+  max-width: 72ch;
+  margin: 0 0 16px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.vx-tag {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 7px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--soft);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+
+.vx-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vx-voice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px 10px;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  transition: border-color 0.15s ease;
+}
+
+.vx-voice.is-playing {
+  border-color: var(--accent);
+}
+
+.vx-play,
+.vx-star,
+.vx-load button,
+.vx-bar button {
+  font-family: var(--mono);
+  color: var(--ink);
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.vx-play {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  font-size: 12px;
+}
+
+.vx-play:hover:not(:disabled),
+.vx-voice.is-playing .vx-play {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.vx-play:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.vx-label {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.vx-label b {
+  font-weight: 500;
+  font-size: 14.5px;
+}
+
+.vx-label small {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.vx-label .vx-grade {
+  font-family: var(--mono);
+  color: var(--accent);
+}
+
+.vx-label span {
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.vx-label em,
+.vx-load em {
+  font-style: normal;
+  color: var(--accent);
+  white-space: normal;
+}
+
+.vx-star {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  font-size: 15px;
+  color: var(--muted);
+  border-color: transparent;
+}
+
+.vx-star:hover,
+.vx-star.is-on {
+  color: var(--accent);
+}
+
+.vx-load {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.vx-load select {
+  max-width: 100%;
+  padding: 7px 8px;
+  font: 13px var(--mono);
+  color: var(--ink);
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+
+.vx-load button,
+.vx-bar button {
+  padding: 7px 14px;
+  font-size: 13px;
+}
+
+.vx-load button:hover:not(:disabled),
+.vx-bar button:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.vx-load button:disabled,
+.vx-bar button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.vx-empty {
+  color: var(--muted);
+}
+
+.vx-bar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px clamp(16px, 4vw, 52px);
+  font: 12.5px var(--mono);
+  color: var(--soft);
+  background: color-mix(in srgb, var(--ground) 92%, transparent);
+  border-top: 1px solid var(--rule);
+  backdrop-filter: blur(6px);
+}
+
+.vx-bar span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.vx-bar button {
+  flex: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
