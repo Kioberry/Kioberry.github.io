@@ -15,7 +15,7 @@ CARTESIA_MODEL = "sonic-3.6"
 MODEL = "claude-haiku-5-5"
 EFFORT = "low"
 # Origins allowed to call the API: the live site and `npm start`.
-ALLOWED_ORIGINS = "https://astridxie.github.io,http://localhost:3000"
+ALLOWED_ORIGINS = "https://kioberry.github.io,https://astridxie.github.io,http://localhost:3000"
 
 # Workers AI: the twin's voice when Cartesia isn't set up (src/tts.js), and the #/voices samples (src/voiceLab.js).
 [ai]

@@ -285,12 +285,12 @@ const INTENTS = [
       if (zh)
         return [
           '现在在 USC 读硕士的最后一学期，12 月毕业。',
-          '刚结束在 Mulholland 的 Applied AI 工作；业余在做 Job Hunter，一个读招聘信息、帮我判断要不要投、还能自动填申请表的智能体（遇到需要我决定的问题会停下来问我）。',
+          '刚结束在 Mulholland 的 Applied AI 工作；业余在做 Job Hunter：它读到一个岗位的 JD，就从我的经历库里挑出最匹配的项目和技能，生成针对这个岗位的简历和求职信，还能写 cold email，每份申请的进度都记在一个看板里。',
           '也在找 AI / LLM / 软件工程的工作！',
         ];
       return [
         `Right now I'm finishing my master's at USC. I graduate in ${gradDate}.`,
-        `I just wrapped up my Applied AI role at ${experience[0].company}, and on the side I've been building Job Hunter: an agent that reads job postings against my goals and fills out applications, pausing whenever a question needs me.`,
+        `I just wrapped up my Applied AI role at ${experience[0].company}, and on the side I've been building Job Hunter: it reads a job description, matches it against my experience bank, and writes a resume and cover letter tailored to that role, plus cold emails, with a dashboard tracking every application.`,
         "And yes, I'm looking for Applied AI, LLM or SWE roles!",
       ];
     },

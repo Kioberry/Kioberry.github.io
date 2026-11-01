@@ -10,7 +10,7 @@ export const NOW = [
   'Final semester of my M.S. in Computer Science at USC; I graduate in December 2026.',
   'My Applied AI Engineer role at Mulholland ended in October 2026.',
   "I'm looking for full-time Applied AI, LLM or software engineering roles.",
-  'On the side I keep building Job Hunter, my agent that reads job postings against my goals and fills out applications, pausing whenever a question needs me.',
+  'On the side I keep building Job Hunter: it reads a job description, matches it against my experience bank of projects, internships and skills, and writes a resume and cover letter tailored to that role. I run it from a Claude skill or a Chrome extension; a dashboard archives every package and tracks each application, and it drafts cold emails too.',
 ];
 
 // Anything else true you're happy for visitors to hear: what you're reading, hobbies, opinions on tools,

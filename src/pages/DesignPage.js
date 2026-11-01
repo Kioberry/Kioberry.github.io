@@ -25,7 +25,9 @@ function DesignList() {
                 {p.title}
               </a>
             </div>
-            <p className="role">{p.kind}</p>
+            <p className="role">
+              {p.kind} · {p.date}
+            </p>
             <p className="proj-blurb">{p.blurb}</p>
             <p className="proj-meta">{p.tags.join(' · ')}</p>
           </article>
@@ -43,7 +45,9 @@ function CaseStudy({ project: p }) {
         ← Design
       </a>
       <header className="case-head">
-        <p className="pb-lbl">{p.kind}</p>
+        <p className="pb-lbl">
+          {p.kind} · {p.date}
+        </p>
         <h1 className="pb-h1">{p.title}</h1>
         <p className="pb-dek">{p.blurb}</p>
         <p className="proj-meta">{p.tags.join(' · ')}</p>
@@ -89,8 +93,11 @@ function CaseStudy({ project: p }) {
             <div className={s.cols === 3 ? 'case-figs case-figs-3' : 'case-figs'}>
               {s.figures.map((f) => (
                 <figure key={f.src} className={f.wide ? 'wide' : undefined}>
-                  <img src={img(p, f.src)} alt={f.caption} loading="lazy" />
-                  <figcaption>{f.caption}</figcaption>
+                  <img src={img(p, f.src)} alt={f.title || f.caption} loading="lazy" />
+                  <figcaption>
+                    {f.title && <strong>{f.title}</strong>}
+                    {f.caption}
+                  </figcaption>
                 </figure>
               ))}
             </div>

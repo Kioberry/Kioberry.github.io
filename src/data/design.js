@@ -1,6 +1,7 @@
 // HCI and design work, moved over from the old Wix portfolio (18973381285.wixsite.com/wanrongxie).
 // Images live in public/design/<id>/; `src` below is the path inside that folder. A section can carry
 // paragraphs (`text`), labelled points (`items`, [label, detail]) and figures; any of them may be left out.
+// A figure may carry a `title`, shown above its caption. `date` is when the project ran.
 // `video` is a YouTube id; when set, the case study opens on the embedded video instead of the cover.
 
 export const designProjects = [
@@ -8,6 +9,7 @@ export const designProjects = [
     id: 'luminara',
     title: 'Luminara',
     kind: 'Interactive installation',
+    date: 'Oct – Nov 2023',
     blurb: 'Say a wish out loud and it prints as a strip of colour. Hang it on the tree and the tree answers with light and projected shooting stars.',
     tags: ['Unity', 'Arduino', 'LED', 'Projection'],
     cover: 'cover.jpg',
@@ -34,19 +36,30 @@ export const designProjects = [
       },
       {
         heading: 'Why wishes',
-        items: [
-          ['Rituals matter', 'Pressure from work and life has people looking for a sense of occasion, small rituals that mark a moment.'],
-          ['Magic is rare', 'We like to wish on shooting stars because those moments feel romantic, but they almost never happen on cue.'],
-          ['Wishes go unseen', 'A wish usually gets no visible answer, which flattens the whole experience.'],
+        text: ['The yearning for enchantment, in three observations.'],
+        cols: 3,
+        figures: [
+          { src: 'ritual.jpg', title: 'Rituals matter', caption: 'Pressure from work and life has people looking for a sense of occasion, small rituals that mark a moment.' },
+          { src: 'shooting-star.jpg', title: 'Magic is rare', caption: 'We like to wish on shooting stars because those moments feel romantic and full of wonder.' },
+          { src: 'rare.jpg', title: 'Wishes go unseen', caption: 'Such moments almost never happen on cue, so a wish usually gets no visible answer, which flattens the whole experience.' },
+        ],
+      },
+      {
+        heading: 'Where it lives',
+        cols: 3,
+        figures: [
+          { src: 'exhibition.jpg', title: 'Exhibition hall' },
+          { src: 'mall.jpg', title: 'Shopping mall' },
+          { src: 'park.jpg', title: 'Amusement park' },
         ],
       },
       {
         heading: 'Who it is for',
-        text: ['Luminara is meant for exhibition halls, shopping malls and amusement parks, and for three kinds of visitor.'],
-        items: [
-          ['High school seniors', 'Facing college and career choices, and looking for something that helps them through an uncertain future.'],
-          ['Romantics', 'People who want poetic, fantastical experiences.'],
-          ['Curious kids', 'They want novel, hands-on experiences that reward exploring.'],
+        cols: 3,
+        figures: [
+          { src: 'seniors.jpg', title: 'High school seniors', caption: 'Facing college and career choices, and looking for something inspiring to help them through an uncertain future.' },
+          { src: 'romantics.jpg', title: 'Romantics', caption: 'They chase romance, passion and beauty, and want poetic, fantastical experiences that feed their imagination.' },
+          { src: 'kids.jpg', title: 'Curious kids', caption: 'They want novel, creative, hands-on experiences that reward exploring.' },
         ],
       },
       {
@@ -90,6 +103,7 @@ export const designProjects = [
     id: 'wardrobe-genie',
     title: 'Wardrobe Genie',
     kind: 'UX design · mobile app',
+    date: 'Jul 2023',
     blurb: 'An e-closet app for sorting clothes and swapping organizing tips, taken from desk research and interviews to a Figma prototype.',
     tags: ['Figma', 'User research', 'Prototyping'],
     cover: 'cover.jpg',
@@ -126,6 +140,7 @@ export const designProjects = [
     id: 'immune-vanguard',
     title: 'Immune Vanguard',
     kind: 'AR game · education',
+    date: 'Nov 2023',
     blurb: 'An AR tower-defense game where young players guard a heart from viruses by moving printed immune-cell markers, and learn how the immune system works along the way.',
     tags: ['Unity', 'AR', 'Xcode'],
     cover: 'cover.jpg',
@@ -140,16 +155,31 @@ export const designProjects = [
       },
       {
         heading: 'Who it is for',
-        items: [
-          ['Children (7–13)', 'Early learners. The game feeds their curiosity about biology.'],
-          ['High school students', 'Studying biology in depth. Playing builds strategic thinking and scientific literacy.'],
-          ['Teachers', 'The interactivity helps them explain abstract concepts.'],
+        cols: 3,
+        figures: [
+          { src: 'children.jpg', title: 'Children (7–13)', caption: 'Early learners with some grounding already. The game feeds their curiosity about biology.' },
+          { src: 'students.jpg', title: 'High school students', caption: 'Studying biology in depth. Playing builds strategic thinking and scientific literacy.' },
+          { src: 'teachers.jpg', title: 'Teachers', caption: 'The interactivity helps them explain abstract concepts and teach more effectively.' },
         ],
       },
       {
-        heading: 'Inspiration',
+        heading: 'Inspiration: biology',
         text: [
-          'The mechanics come from non-specific and specific immunity and the immune cells involved, folded into the format of tower-defense games such as Carrot Fantasy.',
+          'The mechanics come from how the body defends itself: non-specific immunity, the immune cells involved, and specific immunity.',
+        ],
+        cols: 3,
+        figures: [
+          { src: 'nonspecific.jpg', title: 'Non-specific immunity' },
+          { src: 'immune-cells.jpg', title: 'Immune cells' },
+          { src: 'specific.jpg', title: 'Specific immunity' },
+        ],
+      },
+      {
+        heading: 'Inspiration: tower defense',
+        text: ['The format borrows from tower-defense games, where you hold a fixed point by placing defenders along the enemy’s path.'],
+        figures: [
+          { src: 'kingdom-guard.jpg', title: 'Battle of the Kingdom Guard' },
+          { src: 'carrot-fantasy.jpg', title: 'Carrot Fantasy' },
         ],
       },
       {
@@ -190,6 +220,7 @@ export const designProjects = [
     id: 'campus-glide',
     title: 'Campus Glide',
     kind: 'Adaptive system · prototype',
+    date: 'Dec 2023',
     blurb: 'A commute "buddy" for new students that recommends routes and transport from their timetable and preferences, designed to stay transparent about why.',
     tags: ['Recommender systems', 'User survey', 'Prototyping'],
     cover: 'cover.jpg',
