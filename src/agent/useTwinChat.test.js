@@ -1,11 +1,11 @@
 import { act, renderHook } from '@testing-library/react';
 import useTwinChat from './useTwinChat';
 import { askTwin } from './twinAgent';
-import { silentSpeech, voicedSpeech } from '../twin3d/speech';
+import { silentSpeech, voicedSpeech } from './speech';
 
 jest.mock('./twinAgent', () => ({ ...jest.requireActual('./twinAgent'), askTwin: jest.fn() }));
-jest.mock('../twin3d/speech', () => ({
-  ...jest.requireActual('../twin3d/speech'),
+jest.mock('./speech', () => ({
+  ...jest.requireActual('./speech'),
   voicedSpeech: jest.fn(),
   voiceBudgetLeft: () => 180000,
   spendVoice: () => {},

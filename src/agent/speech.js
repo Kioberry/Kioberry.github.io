@@ -1,4 +1,4 @@
-import { chunkDelay, nextStop } from '../agent/pace';
+import { chunkDelay, nextStop } from './pace';
 
 // What the avatar says, as TalkingHead's speakAudio() takes it: { words, wtimes, wdurations, visemes?, vtimes?,
 // vdurations? } in ms, plus `ends`, where each word ends in the line (so the text can be revealed word by word as

@@ -22,5 +22,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local stand-in avatar for testing the 3D twin (never published)
+# the 3D twin lives on the twin-3d branch; its local avatar sources and stand-in model stay out of main
+/avatar/
 /public/twin/dev/

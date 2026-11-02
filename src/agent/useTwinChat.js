@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { askTwin, pickFollowups, suggestedQuestions, toBubbles } from './twinAgent';
 import { chunkDelay, gapMs, nextStop, thinkingMs } from './pace';
-import { silentSpeech, spendVoice, voiceBudgetLeft, voicedSpeech } from '../twin3d/speech';
+import { silentSpeech, spendVoice, voiceBudgetLeft, voicedSpeech } from './speech';
 
 const NO_BUBBLES = [];
 const GLITCH = { bubbles: ['Hmm, my connection just glitched.', 'Mind asking that again?'], expression: 'think' };
