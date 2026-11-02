@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { askTwin, pickFollowups, suggestedQuestions, toBubbles } from './twinAgent';
 import { chunkDelay, gapMs, nextStop, thinkingMs } from './pace';
-import { spendVoice, voiceBudgetLeft, voicedSpeech } from '../twin3d/speech';
+import { silentSpeech, spendVoice, voiceBudgetLeft, voicedSpeech } from '../twin3d/speech';
 
 const NO_BUBBLES = [];
 const GLITCH = { bubbles: ['Hmm, my connection just glitched.', 'Mind asking that again?'], expression: 'think' };
@@ -9,7 +9,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const readyAvatar = (speaker) => (speaker?.current?.ready ? speaker.current : null);
 const SpeechRecognition = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
 const canSpeak = typeof window !== 'undefined' && 'speechSynthesis' in window;
-const AudioCtx = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext);
+const VOICE_WAIT = 8000; // longest a sentence's voice may take to arrive; after that the browser says it
 const reduceMotion =
   typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -20,7 +20,8 @@ const reduceMotion =
 // A model answer streams in bubble by bubble, so the next bubble may not exist yet when the previous one is
 // done: the twin then stays in the typing gap until it arrives or the answer ends (`streaming` turns false).
 // Visitors can keep asking while it talks: new questions wait in a queue and are answered in order.
-// Conversation mode reads each bubble aloud and keeps the text in step with the voice.
+// Conversation mode reads each bubble aloud and keeps the text in step with the voice: every bubble's voice is
+// fetched as soon as the bubble exists, and the twin keeps "typing" until it is in, so words and voice start together.
 //
 // With a 3D avatar (`speaker`, a ref to TalkingAvatar), the avatar says every bubble, as on matthewpetersen.ca:
 // aloud when the twin has a voice, else mouthing it silently, and the text appears word by word as it is said.
@@ -41,6 +42,7 @@ export default function useTwinChat({ speaker } = {}) {
   const speaking = useRef(false);
   const audioCtx = useRef(null); // made when conversation mode is switched on, inside the click, so it may play
   const voiceLines = useRef(new Map()); // line -> Promise of its voiced speech
+  const prepare = useRef(() => {}); // fetches a line's voice ahead of time
   const source = useRef(null);
   const [spokenTick, setSpokenTick] = useState(0);
 
@@ -55,11 +57,11 @@ export default function useTwinChat({ speaker } = {}) {
   useEffect(() => {
     if (phase !== 'talking') return undefined;
     if (typed < line.length) {
-      if (readyAvatar(speaker)) return undefined; // the avatar's speech reveals the words (see the avatar effect)
-      // word by word, with pauses where a speaker would breathe. In conversation mode the voice drives the
-      // text (see the speak effect) and this timer is only a slow fallback.
+      // the avatar's speech, or in conversation mode the voice, reveals the words (see the effects below)
+      if (readyAvatar(speaker) || voice) return undefined;
+      // word by word, with pauses where a speaker would breathe
       const j = nextStop(line, typed);
-      const ms = typed === 0 ? 0 : chunkDelay(line, typed, j) * (voice ? 2.2 : 1);
+      const ms = typed === 0 ? 0 : chunkDelay(line, typed, j);
       const id = setTimeout(() => setTyped((n) => Math.max(n, j)), reduceMotion ? 0 : ms);
       return () => clearTimeout(id);
     }
@@ -74,17 +76,27 @@ export default function useTwinChat({ speaker } = {}) {
       if (!streaming) setPhase('idle'); // the answer ended here; otherwise keep "typing" until the next bubble arrives
       return undefined;
     }
-    // fetch its voice while "typing"
-    if (readyAvatar(speaker)) readyAvatar(speaker).prepare(nextLine);
-    else if (voice) fetchVoice(nextLine).catch(() => {});
-    const id = setTimeout(() => {
+    let live = true;
+    const go = () => {
+      if (!live) return;
       setBubble((b) => b + 1);
       setTyped(0);
       setPhase('talking');
-    }, reduceMotion || bubble < 0 ? 0 : gapMs(nextLine));
-    return () => clearTimeout(id);
+    };
+    // in conversation mode, keep "typing" until the line's voice is in (or has failed, or is too slow)
+    const voiced = voice && !readyAvatar(speaker) ? fetchVoice(nextLine).catch(() => {}) : null;
+    const id = setTimeout(() => (voiced ? voiced.then(go) : go()), reduceMotion || bubble < 0 ? 0 : gapMs(nextLine));
+    return () => {
+      live = false;
+      clearTimeout(id);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, bubble, nextLine, streaming, speaker, voice]);
+
+  // every bubble still to come has its voice fetched now, so it is ready by its turn
+  useEffect(() => {
+    bubbles.slice(bubble + 1).forEach((l) => prepare.current(l));
+  }, [bubbles, bubble, voice]);
 
   // ---- the avatar says each bubble, revealing words as they are said ---------------------------------
   const isTalking = phase === 'talking';
@@ -108,10 +120,20 @@ export default function useTwinChat({ speaker } = {}) {
   }, [active, bubble, isTalking]);
 
   // ---- conversation mode without an avatar: the twin's voice (twin-api /tts), else the browser's ----------
+  // a line's voice, given up on VOICE_WAIT ms after it was asked for
   const fetchVoice = (l) => {
     if (!audioCtx.current || voiceBudgetLeft() <= 0) return Promise.reject(new Error('no voice'));
-    if (!voiceLines.current.has(l)) voiceLines.current.set(l, voicedSpeech(l, audioCtx.current));
+    if (!voiceLines.current.has(l)) {
+      const slow = wait(VOICE_WAIT).then(() => Promise.reject(new Error('voice too slow')));
+      const p = Promise.race([voicedSpeech(l, audioCtx.current), slow]);
+      p.catch(() => {});
+      voiceLines.current.set(l, p);
+    }
     return voiceLines.current.get(l);
+  };
+  prepare.current = (l) => {
+    if (readyAvatar(speaker)) readyAvatar(speaker).prepare(l);
+    else if (voice) fetchVoice(l).catch(() => {});
   };
   const hush = () => {
     if (source.current) {
@@ -144,13 +166,17 @@ export default function useTwinChat({ speaker } = {}) {
       u.onend = done;
       u.onerror = done;
       window.speechSynthesis.speak(u);
+      // not every voice reports word boundaries: the typing rhythm, slowed to speaking speed, keeps words coming
+      const s = silentSpeech(line);
+      s.ends.forEach((end, i) => timers.push(setTimeout(() => reveal(end), s.wtimes[i] * 2.2)));
       return undefined;
     };
     speaking.current = true;
-    fetchVoice(line)
+    const voiced = fetchVoice(line);
+    voiceLines.current.delete(line); // said once; a failed or slow voice isn't kept for next time
+    voiced
       .then((s) => {
         if (!live) return;
-        voiceLines.current.delete(line);
         spendVoice(s.ms);
         const src = audioCtx.current.createBufferSource();
         src.buffer = s.audio;
@@ -159,7 +185,6 @@ export default function useTwinChat({ speaker } = {}) {
         source.current = src;
         src.start();
         s.words.forEach((_, i) => timers.push(setTimeout(() => reveal(s.ends[i]), s.wtimes[i])));
-        if (nextLine) fetchVoice(nextLine).catch(() => {}); // the next bubble's voice, while this one is said
       })
       .catch(() => live && browserVoice());
     return () => {
@@ -192,6 +217,7 @@ export default function useTwinChat({ speaker } = {}) {
         firstBubble = r;
       });
       const onBubble = (b) => {
+        prepare.current(b);
         got.push(b);
         if (shown) update({ bubbles: [...got] });
         else firstBubble();
@@ -311,6 +337,7 @@ export default function useTwinChat({ speaker } = {}) {
     shuffleFollowups,
     voice,
     toggleVoice: () => {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!voice && AudioCtx) {
         audioCtx.current = audioCtx.current || new AudioCtx();
         audioCtx.current.resume();

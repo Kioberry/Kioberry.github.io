@@ -181,8 +181,12 @@ async function workersAi(env, text, language) {
   return said(await aiBytes(await env.AI.run(MELO, { prompt: text, lang: language })), `melotts:${language}`);
 }
 
+// Names the voices get wrong, written the way people say them. Aura reads "Build4SC" out letter by letter.
+const SAY = [[/\bBuild4SC\b/gi, 'Build for SC']];
+export const spoken = (text) => SAY.reduce((t, [name, said]) => t.replace(name, said), text);
+
 export async function speak(env, body) {
-  const text = typeof body?.text === 'string' ? body.text.trim().slice(0, MAX_TEXT) : '';
+  const text = typeof body?.text === 'string' ? spoken(body.text.trim().slice(0, MAX_TEXT)) : '';
   if (!text) return { status: 400, json: { error: 'no text' } };
   const language = body.language === 'zh' ? 'zh' : 'en';
   if (env.CARTESIA_API_KEY && env.CARTESIA_VOICE_ID) return cartesia(env, text, language);

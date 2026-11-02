@@ -1,5 +1,5 @@
 import { silentSpeech, toVisemes, wordEnds } from './speech';
-import { collect, visemeId } from '../../twin-api/src/tts';
+import { collect, spoken, visemeId } from '../../twin-api/src/tts';
 
 describe('toVisemes (Azure ids -> Oculus, as on matthewpetersen.ca)', () => {
   it('drops leading silence and times each viseme until the next', () => {
@@ -95,5 +95,11 @@ describe('twin-api tts', () => {
 
   it('throws on an error event', () => {
     expect(() => collect([{ type: 'error', message: 'bad voice' }])).toThrow('bad voice');
+  });
+
+  it('says names the way people say them, not letter by letter', () => {
+    expect(spoken('It won 1st place at USC Build4SC, and I love it.')).toBe('It won 1st place at USC Build for SC, and I love it.');
+    expect(spoken('Peeko 在 USC Build4SC 拿了第一名')).toBe('Peeko 在 USC Build for SC 拿了第一名');
+    expect(spoken('Peeko, easily.')).toBe('Peeko, easily.');
   });
 });
