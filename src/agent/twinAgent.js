@@ -22,30 +22,36 @@ export { toBubbles };
 
 const API_URL = process.env.REACT_APP_TWIN_API_URL;
 
-// Short, Petersen-style prompts. The first three show before anything is asked; after each answer the twin
-// suggests three that fit the conversation and haven't been asked yet.
+// Short, Petersen-style prompts. The first three show before anything is asked; one tap on ↻ brings the
+// recruiter set (fit, working proof, the project worth remembering). After each answer the twin suggests
+// three that fit the conversation and haven't been asked yet.
 const QUESTION_POOL = [
   'Favorite project?',
   "What's your background?",
   'What drives you?',
-  'What are you working on now?',
+  'What roles are you looking for?',
+  'What can I try live?',
+  'Which project are you proudest of?',
   "What's your tech stack?",
+  'What are you working on now?',
   'Tell me about DayPilot',
-  'How did you win the hackathon?',
   'How do I reach you?',
 ];
 
 const FOLLOWUPS_BY_TOPIC = {
-  projects: ['Tell me more', 'Another project?', 'How did you win the hackathon?'],
+  roles: ['What can I try live?', "What's your tech stack?", 'How do I reach you?'],
+  live: ['Tell me about LabMind', 'Which project are you proudest of?', 'What roles are you looking for?'],
+  twin: ['What can I try live?', "What's your tech stack?", 'What roles are you looking for?'],
+  projects: ['Tell me more', 'Another project?', 'What can I try live?'],
   project: ['Tell me more', 'Another project?', "What's your tech stack?"],
-  hackathon: ['Tell me more', 'Favorite project?', 'What drives you?'],
-  background: ['Where have you worked?', 'What drives you?', 'What are you working on now?'],
-  experience: ['What did you do at Mulholland?', 'Tell me more', 'What drives you?'],
-  company: ['Tell me more', 'Favorite project?', "What's your tech stack?"],
-  passion: ['Tell me more', 'Favorite project?', 'What are you working on now?'],
-  skills: ['Tell me more', 'Where have you worked?', 'How do I reach you?'],
-  now: ['Tell me about Job Hunter', 'How do I reach you?', 'Favorite project?'],
-  contact: ['What are you working on now?', 'Favorite project?', 'What drives you?'],
+  hackathon: ['Tell me more', 'Tell me about DayPilot', 'What roles are you looking for?'],
+  background: ['Where have you worked?', 'What drives you?', 'What roles are you looking for?'],
+  experience: ['What did you do at Mulholland?', 'Tell me more', 'What roles are you looking for?'],
+  company: ['Tell me more', 'Which project are you proudest of?', "What's your tech stack?"],
+  passion: ['Tell me more', 'Which project are you proudest of?', 'What are you working on now?'],
+  skills: ['Tell me more', 'What can I try live?', 'How do I reach you?'],
+  now: ['Tell me about Job Hunter', 'What roles are you looking for?', 'How do I reach you?'],
+  contact: ['What roles are you looking for?', 'What can I try live?', 'Which project are you proudest of?'],
 };
 
 export const suggestedQuestions = QUESTION_POOL.slice(0, 3);
@@ -125,6 +131,56 @@ const INTENTS = [
             "I'm Astrid's digital twin: a little program she wrote that knows about her work.",
             `I try to answer the way she would, but for anything important, email the real me at ${person.email}.`,
           ],
+  },
+  {
+    id: 'twin',
+    match: /how (did|do) you (build|make)|how (was|is) (this|it|the site) (built|made)|how (does|do) (this|you|the twin) work|this (site|website|twin)|digital twin|tech behind|怎么做的|这个网站|数字分身/i,
+    label: { en: 'how this twin works', zh: '这个分身怎么做的' },
+    topic: 'twin',
+    say: ({ zh }) =>
+      zh
+        ? [
+            '我是 Claude，用婉蓉的身份在说话。',
+            '一个 Cloudflare Worker 把她的经历和笔记交给模型，再把回答一条条流式发回来，所以几乎什么问题都能聊。',
+          ]
+        : [
+            "I'm Claude, talking as Astrid.",
+            'A Cloudflare Worker gives the model my profile and notes and streams the reply back one message at a time, so I can talk about almost anything, in my own voice.',
+          ],
+  },
+  {
+    id: 'roles',
+    match: /\broles?\b|looking for|open to|full[- ]time|position|hiring|sponsor|visa|relocat|start date|when can you start|找工作|求职|岗位|职位|签证|搬家|搬到/i,
+    label: { en: "what I'm looking for", zh: '在找什么工作' },
+    topic: 'roles',
+    say: ({ zh }) =>
+      zh
+        ? [
+            '我在找全职的 Applied AI、LLM 或软件工程岗位，2026 年 12 月从 USC 硕士毕业。',
+            '不需要签证担保，也愿意搬去别的城市。',
+          ]
+        : [
+            `Full-time Applied AI, LLM or software engineering roles. I finish my master's at USC in ${gradDate}.`,
+            "I don't need visa sponsorship, and I'm happy to relocate.",
+          ],
+  },
+  {
+    id: 'live',
+    match: /what can i (try|play|see|use)|try (it|them|out|something)|\blive (demo|version|link|site)s?|can i (try|play with)|any demos?|deployed|试用|在线体验|演示|能玩/i,
+    label: { en: 'what you can try live', zh: '能在线体验的' },
+    topic: 'live',
+    say: ({ zh, ctx }) => {
+      ctx.project = 'labmind';
+      if (zh)
+        return [
+          'LabMind 跑在 Cloud Run 上，可以直接试：把显微镜图像变成下一步实验建议。Peeko 在 Vercel 上也能直接打开。',
+          '想玩游戏的话，Elemental 是浏览器里的多人迷宫。链接都在 Projects 页面。',
+        ];
+      return [
+        'LabMind is live on Cloud Run: it turns microscopy images into next-step experiment decisions. Peeko is live too, on Vercel.',
+        "And if you'd rather play something, Elemental is a multiplayer maze in the browser. The links are all on my Projects page.",
+      ];
+    },
   },
   {
     id: 'greeting',
@@ -215,7 +271,7 @@ const INTENTS = [
   {
     id: 'projects',
     match: /project|\bbuilt\b|proud of|portfolio|作品|项目|做过/i,
-    label: { en: 'my favorite project', zh: '最喜欢的项目' },
+    label: { en: "the project I'm proudest of", zh: '最得意的项目' },
     topic: 'projects',
     say: ({ zh, rng, times, ctx }) => {
       const [a, b, c] = featured;
@@ -368,7 +424,8 @@ const INTENTS = [
     id: 'location',
     match: /where (are you|do you live)|based in|located|which city|住在|在哪/i,
     label: { en: "where I'm based", zh: '在哪里' },
-    say: ({ zh }) => (zh ? ['我在洛杉矶。'] : [`I'm in ${person.location.replace(', CA', '')}.`]),
+    say: ({ zh }) =>
+      zh ? ['我在洛杉矶，也愿意搬去别的城市。'] : [`I'm in ${person.location.replace(', CA', '')}, and happy to relocate for the right role.`],
   },
   {
     id: 'fun',

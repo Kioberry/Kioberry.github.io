@@ -72,3 +72,13 @@ test('decimals do not break sentences, and captions are said as sentences', () =
   expect(asSpoken('Turns raw microscopy into decisions.')[0]).toMatch(/^It turns raw/);
   expect(asSpoken('QLoRA-fine-tuned small models for poker.')[0]).toMatch(/^Basically: QLoRA/);
 });
+
+test('the three home-page questions have their own answers', () => {
+  const roles = respond('What roles are you looking for?', [], rng);
+  expect(roles.topic).toBe('roles');
+  expect(roles.text).toMatch(/sponsorship/);
+  expect(respond('What can I try live?', [], rng).text).toMatch(/LabMind.*Cloud Run/);
+  expect(respond('Which project are you proudest of?', [], rng).topic).toBe('projects');
+  expect(respond('How did you build this twin?', [], rng).topic).toBe('twin');
+  expect(respond('Where do you live?', [], rng).text).toMatch(/relocate/);
+});
