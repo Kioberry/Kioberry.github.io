@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import ProjectLinks from '../components/ProjectLinks';
 import { designProjects } from '../data/design';
 
@@ -13,7 +14,7 @@ function DesignList() {
         <p className="pb-dek">Installations, apps and games, mostly HCI work from before the agents took over.</p>
       </header>
 
-      <section className="proj-grid">
+      <section className="proj-grid proj-grid-2">
         {designProjects.map((p) => (
           <article className="proj" key={p.id}>
             <a className="thumb-frame" href={`#/design/${p.id}`} tabIndex={-1} aria-hidden="true">
@@ -24,10 +25,9 @@ function DesignList() {
               <a className="t" href={`#/design/${p.id}`}>
                 {p.title}
               </a>
+              <span className="y">{p.date}</span>
             </div>
-            <p className="role">
-              {p.kind} · {p.date}
-            </p>
+            <p className="role">{p.kind}</p>
             <p className="proj-blurb">{p.blurb}</p>
             <p className="proj-meta">{p.tags.join(' · ')}</p>
           </article>
@@ -37,7 +37,18 @@ function DesignList() {
   );
 }
 
+// Each case study repaints the whole page (header and footer too) in its project's palette: see
+// [data-palette] in App.css. The attribute comes off again when the visitor leaves.
+function usePalette(id) {
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.palette = id;
+    return () => delete root.dataset.palette;
+  }, [id]);
+}
+
 function CaseStudy({ project: p }) {
+  usePalette(p.id);
   const next = designProjects[(designProjects.indexOf(p) + 1) % designProjects.length];
   return (
     <main className="case">
@@ -45,13 +56,25 @@ function CaseStudy({ project: p }) {
         ← Design
       </a>
       <header className="case-head">
-        <p className="pb-lbl">
-          {p.kind} · {p.date}
-        </p>
-        <h1 className="pb-h1">{p.title}</h1>
-        <p className="pb-dek">{p.blurb}</p>
-        <p className="proj-meta">{p.tags.join(' · ')}</p>
-        <ProjectLinks links={p.links} />
+        <div>
+          <h1 className="case-title">{p.title}</h1>
+          <p className="case-dek">{p.blurb}</p>
+          <ProjectLinks links={p.links} />
+        </div>
+        <dl className="case-facts">
+          <div>
+            <dt>Type</dt>
+            <dd>{p.kind}</dd>
+          </div>
+          <div>
+            <dt>When</dt>
+            <dd>{p.date}</dd>
+          </div>
+          <div>
+            <dt>Tools</dt>
+            <dd>{p.tags.join(', ')}</dd>
+          </div>
+        </dl>
       </header>
       {p.video ? (
         <>
@@ -76,32 +99,34 @@ function CaseStudy({ project: p }) {
       {p.sections.map((s) => (
         <section className="case-sec" key={s.heading}>
           <h2>{s.heading}</h2>
-          {s.text?.map((t) => (
-            <p key={t}>{t}</p>
-          ))}
-          {s.items && (
-            <dl className="case-items">
-              {s.items.map(([k, v]) => (
-                <div key={k}>
-                  <dt>{k}</dt>
-                  <dd>{v}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
-          {s.figures && (
-            <div className={s.cols === 3 ? 'case-figs case-figs-3' : 'case-figs'}>
-              {s.figures.map((f) => (
-                <figure key={f.src} className={f.wide ? 'wide' : undefined}>
-                  <img src={img(p, f.src)} alt={f.title || f.caption} loading="lazy" />
-                  <figcaption>
-                    {f.title && <strong>{f.title}</strong>}
-                    {f.caption}
-                  </figcaption>
-                </figure>
-              ))}
-            </div>
-          )}
+          <div className="case-body">
+            {s.text?.map((t) => (
+              <p key={t}>{t}</p>
+            ))}
+            {s.items && (
+              <dl className="case-items">
+                {s.items.map(([k, v]) => (
+                  <div key={k}>
+                    <dt>{k}</dt>
+                    <dd>{v}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+            {s.figures && (
+              <div className={s.cols === 3 ? 'case-figs case-figs-3' : 'case-figs'}>
+                {s.figures.map((f) => (
+                  <figure key={f.src} className={f.wide ? 'wide' : undefined}>
+                    <img src={img(p, f.src)} alt={f.title || f.caption} loading="lazy" />
+                    <figcaption>
+                      {f.title && <strong>{f.title}</strong>}
+                      {f.caption}
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
+            )}
+          </div>
         </section>
       ))}
 
