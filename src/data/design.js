@@ -4,12 +4,15 @@
 // A figure may carry a `title`, shown above its caption. `date` is when the project ran. A section's `group`
 // `crop: true` trims a three-up row of photos to one shape so the titles line up (never use it on diagrams).
 // gathers consecutive sections under one heading (the old site's "Inspirations", "Design"), for the layouts that show it.
+// `flow` draws a left-to-right pipeline: data and steps alternate, starting and ending with data.
+// `layout` picks the case-study layout (see LAYOUTS in DesignPage.js).
 // `video` is a YouTube id; when set, the case study opens on the embedded video instead of the cover.
 
 export const designProjects = [
   {
     id: 'luminara',
     title: 'Luminara',
+    layout: 'editorial',
     kind: 'Interactive installation',
     date: 'Oct – Nov 2023',
     blurb: 'Say a wish out loud and it prints as a strip of colour. Hang it on the tree and the tree answers with light and projected shooting stars.',
@@ -92,13 +95,13 @@ export const designProjects = [
       {
         heading: 'Voice to colour, in Unity',
         group: 'Implementation',
+        flow: ['Voice', 'Audio recorder', 'AudioClip', 'Audio processor', 'Spectrum', 'Mapping function', 'Colour array', 'Print script', 'Wish tape'],
         items: [
           ['Record', 'A recorder class starts capturing as soon as someone speaks, through Unity’s Microphone.Start().'],
           ['Spectrum', 'AudioSource.GetSpectrumData() gives the frequency spectrum of the clip.'],
           ['Map', 'Frequencies under 2000 Hz map to dark colours (deep green, brown, dark blue, dark purple); above 2000 Hz to light ones (sky blue, pink, lemon yellow, aqua).'],
           ['Print', 'The colours fill the tape segments, Texture2D.EncodeToPNG() saves the image, and a print script sends it to the printer.'],
         ],
-        figures: [{ src: 'voice-to-color.jpg', caption: 'Voice → audio clip → spectrum → colour array.' }],
       },
       {
         heading: 'What I would change',
@@ -149,6 +152,7 @@ export const designProjects = [
   {
     id: 'immune-vanguard',
     title: 'Immune Vanguard',
+    layout: 'original',
     kind: 'AR game · education',
     date: 'Nov 2023',
     blurb: 'An AR tower-defense game where young players guard a heart from viruses by moving printed immune-cell markers, and learn how the immune system works along the way.',
@@ -217,10 +221,10 @@ export const designProjects = [
         heading: 'Characters',
         group: 'Design',
         figures: [
-          { src: 'heart.jpg', caption: 'Heart: the body you defend. Starts with 8 HP.' },
-          { src: 'b-cell.jpg', caption: 'B cell (L1): fires one Y-shaped antibody per attack.' },
-          { src: 't-cell.jpg', caption: 'T cell (L2): fires in all directions when viruses get close.' },
-          { src: 'macrophage.jpg', caption: 'Macrophage (L3): engulfs every virus it touches.' },
+          { src: 'heart.jpg', title: 'Heart', caption: 'The body you defend. Starts with 8 HP.' },
+          { src: 'b-cell.jpg', title: 'B cell · L1', caption: 'Fires one Y-shaped antibody per attack.' },
+          { src: 't-cell.jpg', title: 'T cell · L2', caption: 'Fires in all directions when viruses get close.' },
+          { src: 'macrophage.jpg', title: 'Macrophage · L3', caption: 'Engulfs every virus it touches.' },
         ],
       },
       {

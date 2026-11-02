@@ -1,10 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import CaseTuner from '../components/CaseTuner';
 import ProjectLinks from '../components/ProjectLinks';
 import { designProjects } from '../data/design';
 
 // #/design lists the HCI and design work; #/design/<id> opens one case study. Images live in public/design/<id>/.
 // A case study renders in one of LAYOUTS: a project's `layout` in design.js picks it, and #/design/<id>?layout=<name>
-// previews another (the candidates sit side by side in #/lab).
+// previews another (the candidates sit side by side in #/lab). Adding ?tune opens the layout and colour sliders.
 const img = (p, src) => `${process.env.PUBLIC_URL}/design/${p.id}/${src}`;
 
 export const LAYOUTS = {
@@ -98,13 +99,67 @@ function Facts({ p }) {
   );
 }
 
-// A section's paragraphs, labelled points and figures; every layout styles these through its own class.
+function Figure({ p, f, style, onLoad }) {
+  return (
+    <figure className={f.wide ? 'wide' : undefined} style={style}>
+      <img src={img(p, f.src)} alt={f.title || f.caption} loading="lazy" onLoad={onLoad} />
+      {(f.title || f.caption) && (
+        <figcaption>
+          {f.title && <strong>{f.title}</strong>}
+          {f.caption}
+        </figcaption>
+      )}
+    </figure>
+  );
+}
+
+// A row of figures that all come out the same height, uncropped: each figure grows in proportion to its image's
+// aspect ratio (read when the image loads), so the row fills its width exactly.
+function JustifiedRow({ p, figures }) {
+  const [ratios, setRatios] = useState({});
+  return (
+    <div className="case-figs case-figs-row">
+      {figures.map((f) => (
+        <Figure
+          key={f.src}
+          p={p}
+          f={f}
+          style={{ '--ar': ratios[f.src] || 1 }}
+          onLoad={(e) => {
+            const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
+            if (w && h) setRatios((r) => ({ ...r, [f.src]: w / h }));
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// `flow` alternates data and steps: data are the boxes, each step labels the arrow into the next box.
+function Flow({ steps }) {
+  return (
+    <ol className="case-flow">
+      {steps.map((label, i) => (
+        <li key={label} className={i % 2 ? 'cf-step' : 'cf-node'}>
+          <span>{label}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+// A section's paragraphs, pipeline, labelled points and figures; every layout styles these through its own class.
+// Photo rows marked `crop` share one cropped shape; any other figures form a justified row, with wide ones below.
 function Body({ p, s }) {
+  const figs = s.figures || [];
+  const narrow = figs.filter((f) => !f.wide);
+  const wide = figs.filter((f) => f.wide);
   return (
     <>
       {s.text?.map((t) => (
         <p key={t}>{t}</p>
       ))}
+      {s.flow && <Flow steps={s.flow} />}
       {s.items && (
         <dl className="case-items">
           {s.items.map(([k, v]) => (
@@ -115,20 +170,23 @@ function Body({ p, s }) {
           ))}
         </dl>
       )}
-      {s.figures && (
-        <div className={['case-figs', s.cols === 3 && 'case-figs-3', s.crop && 'case-figs-crop'].filter(Boolean).join(' ')}>
-          {s.figures.map((f) => (
-            <figure key={f.src} className={f.wide ? 'wide' : undefined}>
-              <img src={img(p, f.src)} alt={f.title || f.caption} loading="lazy" />
-              {(f.title || f.caption) && (
-                <figcaption>
-                  {f.title && <strong>{f.title}</strong>}
-                  {f.caption}
-                </figcaption>
-              )}
-            </figure>
+      {s.crop ? (
+        <div className={s.cols === 3 ? 'case-figs case-figs-3 case-figs-crop' : 'case-figs case-figs-crop'}>
+          {figs.map((f) => (
+            <Figure key={f.src} p={p} f={f} />
           ))}
         </div>
+      ) : (
+        <>
+          {narrow.length > 0 && <JustifiedRow p={p} figures={narrow} key={narrow.map((f) => f.src).join()} />}
+          {wide.length > 0 && (
+            <div className="case-figs">
+              {wide.map((f) => (
+                <Figure key={f.src} p={p} f={f} />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </>
   );
@@ -280,15 +338,24 @@ function Chapters({ p }) {
 
 const VIEWS = { editorial: Editorial, original: Original, immersive: Immersive, chapters: Chapters };
 
-export function CaseStudy({ project, layout, embedded = false }) {
+export function CaseStudy({ project, layout, embedded = false, tune = false }) {
   usePalette(project.id, embedded);
   const View = VIEWS[layout] || VIEWS[project.layout] || Editorial;
-  return <View p={project} />;
+  return (
+    <>
+      <View p={project} />
+      {tune && <CaseTuner project={project} />}
+    </>
+  );
 }
 
 export default function DesignPage({ path }) {
   const [route, query = ''] = path.split('?');
   const project = designProjects.find((p) => p.id === route.split('/')[2]);
-  const layout = new URLSearchParams(query).get('layout');
-  return project ? <CaseStudy project={project} layout={layout} /> : <DesignList />;
+  const params = new URLSearchParams(query);
+  return project ? (
+    <CaseStudy project={project} layout={params.get('layout')} tune={params.has('tune')} />
+  ) : (
+    <DesignList />
+  );
 }
