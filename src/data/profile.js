@@ -115,7 +115,7 @@ export const projects = [
     thumb: 'labmind.jpg',
     glyph: '⚗',
     links: [
-      { label: 'Live', url: 'https://lab-mind.vercel.app/' },
+      { label: 'Live', url: 'https://labmind-840267766274.us-central1.run.app/' },
       { label: 'Demo', url: 'https://youtu.be/_BhIjSgo9Jo' },
       { label: 'GitHub', url: 'https://github.com/Kioberry/LabMind' },
     ],
