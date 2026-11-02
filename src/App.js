@@ -10,6 +10,7 @@ import LifePage from './pages/LifePage';
 import LabPage from './pages/LabPage';
 import PlaygroundPage from './pages/PlaygroundPage';
 import VoicesPage from './pages/VoicesPage';
+import RadiusPage from './pages/RadiusPage';
 import { person } from './data/profile';
 import { THEME_IDS } from './components/sceneConfig';
 
@@ -24,6 +25,7 @@ const routes = {
   '/lab': LabPage,
   '/playground': PlaygroundPage,
   '/voices': VoicesPage,
+  '/radius': RadiusPage,
 };
 
 function useHashPath() {

@@ -3,7 +3,16 @@ import ProjectLinks from '../components/ProjectLinks';
 import { designProjects } from '../data/design';
 
 // #/design lists the HCI and design work; #/design/<id> opens one case study. Images live in public/design/<id>/.
+// A case study renders in one of LAYOUTS: a project's `layout` in design.js picks it, and #/design/<id>?layout=<name>
+// previews another (the candidates sit side by side in #/lab).
 const img = (p, src) => `${process.env.PUBLIC_URL}/design/${p.id}/${src}`;
+
+export const LAYOUTS = {
+  editorial: { name: 'Editorial', note: 'Label column on the left, numbered sections, wide body.' },
+  original: { name: 'Original', note: 'The old Wix site: centred group titles, accent subheads, three-up image grids.' },
+  immersive: { name: 'Immersive', note: 'Full-screen cover, centred text, edge-to-edge image mosaics with captions on the image.' },
+  chapters: { name: 'Chapters', note: 'Each section a chapter with a large number; images scroll sideways in a strip.' },
+};
 
 function DesignList() {
   return (
@@ -37,109 +46,249 @@ function DesignList() {
   );
 }
 
-// Each case study repaints the whole page (header and footer too) in its project's palette: see
-// [data-palette] in App.css. The attribute comes off again when the visitor leaves.
-function usePalette(id) {
+// A full-page case study repaints the whole page (header and footer too) in its project's palette: see
+// [data-palette] in App.css. The attribute comes off again when the visitor leaves. Embedded previews carry
+// the palette on their own frame instead.
+function usePalette(id, embedded) {
   useEffect(() => {
+    if (embedded) return undefined;
     const root = document.documentElement;
     root.dataset.palette = id;
     return () => delete root.dataset.palette;
-  }, [id]);
+  }, [id, embedded]);
 }
 
-function CaseStudy({ project: p }) {
-  usePalette(p.id);
+function Video({ p }) {
+  if (!p.video) return <img className="case-hero" src={img(p, p.cover)} alt="" />;
+  return (
+    <>
+      {/* YouTube refuses to play embeds that arrive without a Referer, so state the policy its own embed code uses */}
+      <div className="case-hero case-video">
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${p.video}?rel=0`}
+          title={`${p.title} video`}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerPolicy="strict-origin-when-cross-origin"
+          allowFullScreen
+        />
+      </div>
+      <a className="case-watch" href={`https://www.youtube.com/watch?v=${p.video}`} target="_blank" rel="noreferrer">
+        Watch on YouTube ↗
+      </a>
+    </>
+  );
+}
+
+function Facts({ p }) {
+  return (
+    <dl className="case-facts">
+      <div>
+        <dt>Type</dt>
+        <dd>{p.kind}</dd>
+      </div>
+      <div>
+        <dt>When</dt>
+        <dd>{p.date}</dd>
+      </div>
+      <div>
+        <dt>Tools</dt>
+        <dd>{p.tags.join(', ')}</dd>
+      </div>
+    </dl>
+  );
+}
+
+// A section's paragraphs, labelled points and figures; every layout styles these through its own class.
+function Body({ p, s }) {
+  return (
+    <>
+      {s.text?.map((t) => (
+        <p key={t}>{t}</p>
+      ))}
+      {s.items && (
+        <dl className="case-items">
+          {s.items.map(([k, v]) => (
+            <div key={k}>
+              <dt>{k}</dt>
+              <dd>{v}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      {s.figures && (
+        <div className={['case-figs', s.cols === 3 && 'case-figs-3', s.crop && 'case-figs-crop'].filter(Boolean).join(' ')}>
+          {s.figures.map((f) => (
+            <figure key={f.src} className={f.wide ? 'wide' : undefined}>
+              <img src={img(p, f.src)} alt={f.title || f.caption} loading="lazy" />
+              {(f.title || f.caption) && (
+                <figcaption>
+                  {f.title && <strong>{f.title}</strong>}
+                  {f.caption}
+                </figcaption>
+              )}
+            </figure>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+// Consecutive sections sharing a `group` become one block; a section without one is its own block.
+function grouped(sections) {
+  const out = [];
+  for (const s of sections) {
+    const last = out[out.length - 1];
+    if (s.group && last?.title === s.group) last.sections.push(s);
+    else out.push({ title: s.group || s.heading, sections: [s], named: Boolean(s.group) });
+  }
+  return out;
+}
+
+function Back() {
+  return (
+    <a className="case-back" href="#/design">
+      ← Design
+    </a>
+  );
+}
+
+function Next({ p }) {
   const next = designProjects[(designProjects.indexOf(p) + 1) % designProjects.length];
   return (
-    <main className="case">
-      <a className="case-back" href="#/design">
-        ← Design
-      </a>
+    <a className="case-next" href={`#/design/${next.id}`}>
+      <span>Next</span>
+      {next.title} →
+    </a>
+  );
+}
+
+function Editorial({ p }) {
+  return (
+    <main className="case case-editorial">
+      <Back />
       <header className="case-head">
         <div>
           <h1 className="case-title">{p.title}</h1>
           <p className="case-dek">{p.blurb}</p>
           <ProjectLinks links={p.links} />
         </div>
-        <dl className="case-facts">
-          <div>
-            <dt>Type</dt>
-            <dd>{p.kind}</dd>
-          </div>
-          <div>
-            <dt>When</dt>
-            <dd>{p.date}</dd>
-          </div>
-          <div>
-            <dt>Tools</dt>
-            <dd>{p.tags.join(', ')}</dd>
-          </div>
-        </dl>
+        <Facts p={p} />
       </header>
-      {p.video ? (
-        <>
-          {/* YouTube refuses to play embeds that arrive without a Referer, so state the policy its own embed code uses */}
-          <div className="case-hero case-video">
-            <iframe
-              src={`https://www.youtube-nocookie.com/embed/${p.video}?rel=0`}
-              title={`${p.title} video`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerPolicy="strict-origin-when-cross-origin"
-              allowFullScreen
-            />
-          </div>
-          <a className="case-watch" href={`https://www.youtube.com/watch?v=${p.video}`} target="_blank" rel="noreferrer">
-            Watch on YouTube ↗
-          </a>
-        </>
-      ) : (
-        <img className="case-hero" src={img(p, p.cover)} alt="" />
-      )}
-
+      <Video p={p} />
       {p.sections.map((s) => (
         <section className="case-sec" key={s.heading}>
           <h2>{s.heading}</h2>
           <div className="case-body">
-            {s.text?.map((t) => (
-              <p key={t}>{t}</p>
-            ))}
-            {s.items && (
-              <dl className="case-items">
-                {s.items.map(([k, v]) => (
-                  <div key={k}>
-                    <dt>{k}</dt>
-                    <dd>{v}</dd>
-                  </div>
-                ))}
-              </dl>
-            )}
-            {s.figures && (
-              <div className={s.cols === 3 ? 'case-figs case-figs-3' : 'case-figs'}>
-                {s.figures.map((f) => (
-                  <figure key={f.src} className={f.wide ? 'wide' : undefined}>
-                    <img src={img(p, f.src)} alt={f.title || f.caption} loading="lazy" />
-                    <figcaption>
-                      {f.title && <strong>{f.title}</strong>}
-                      {f.caption}
-                    </figcaption>
-                  </figure>
-                ))}
-              </div>
-            )}
+            <Body p={p} s={s} />
           </div>
         </section>
       ))}
-
-      <a className="case-next" href={`#/design/${next.id}`}>
-        <span>Next</span>
-        {next.title} →
-      </a>
+      <Next p={p} />
     </main>
   );
 }
 
+function Original({ p }) {
+  return (
+    <main className="case case-original">
+      <Back />
+      <header className="co-head">
+        <h1 className="case-title">{p.title}</h1>
+        <p className="case-dek">{p.blurb}</p>
+        <p className="co-meta">
+          {p.kind} · {p.date} · {p.tags.join(', ')}
+        </p>
+      </header>
+      <Video p={p} />
+      {grouped(p.sections).map((g) => (
+        <section className="co-group" key={g.title}>
+          <h2>{g.title}</h2>
+          {g.sections.map((s) => (
+            <div className="co-sub" key={s.heading}>
+              {g.named && <h3>{s.heading}</h3>}
+              <Body p={p} s={s} />
+            </div>
+          ))}
+        </section>
+      ))}
+      <Next p={p} />
+    </main>
+  );
+}
+
+function Immersive({ p }) {
+  return (
+    <main className="case case-immersive">
+      <header className="ci-hero" style={{ backgroundImage: `url(${img(p, p.cover)})` }}>
+        <Back />
+        <div className="ci-hero-text">
+          <p className="ci-kicker">
+            {p.kind} · {p.date}
+          </p>
+          <h1 className="case-title">{p.title}</h1>
+          <p className="case-dek">{p.blurb}</p>
+        </div>
+      </header>
+      <div className="ci-video">
+        <Video p={p} />
+      </div>
+      {grouped(p.sections).map((g) => (
+        <section className="ci-group" key={g.title}>
+          <h2>{g.title}</h2>
+          {g.sections.map((s) => (
+            <div className="ci-sub" key={s.heading}>
+              {g.named && <h3>{s.heading}</h3>}
+              <Body p={p} s={s} />
+            </div>
+          ))}
+        </section>
+      ))}
+      <p className="ci-tools">{p.tags.join(' · ')}</p>
+      <Next p={p} />
+    </main>
+  );
+}
+
+function Chapters({ p }) {
+  return (
+    <main className="case case-chapters">
+      <Back />
+      <header className="ch-head">
+        <p className="ci-kicker">
+          {p.kind} · {p.date}
+        </p>
+        <h1 className="case-title">{p.title}</h1>
+        <p className="case-dek">{p.blurb}</p>
+      </header>
+      <Video p={p} />
+      {p.sections.map((s, i) => (
+        <section className="ch-sec" key={s.heading}>
+          <span className="ch-num" aria-hidden="true">
+            {String(i + 1).padStart(2, '0')}
+          </span>
+          {s.group && <p className="ch-group">{s.group}</p>}
+          <h2>{s.heading}</h2>
+          <Body p={p} s={s} />
+        </section>
+      ))}
+      <p className="ci-tools">{p.tags.join(' · ')}</p>
+      <Next p={p} />
+    </main>
+  );
+}
+
+const VIEWS = { editorial: Editorial, original: Original, immersive: Immersive, chapters: Chapters };
+
+export function CaseStudy({ project, layout, embedded = false }) {
+  usePalette(project.id, embedded);
+  const View = VIEWS[layout] || VIEWS[project.layout] || Editorial;
+  return <View p={project} />;
+}
+
 export default function DesignPage({ path }) {
-  const id = path.split('/')[2];
-  const project = designProjects.find((p) => p.id === id);
-  return project ? <CaseStudy project={project} /> : <DesignList />;
+  const [route, query = ''] = path.split('?');
+  const project = designProjects.find((p) => p.id === route.split('/')[2]);
+  const layout = new URLSearchParams(query).get('layout');
+  return project ? <CaseStudy project={project} layout={layout} /> : <DesignList />;
 }

@@ -1,7 +1,9 @@
 // HCI and design work, moved over from the old Wix portfolio (18973381285.wixsite.com/wanrongxie).
 // Images live in public/design/<id>/; `src` below is the path inside that folder. A section can carry
 // paragraphs (`text`), labelled points (`items`, [label, detail]) and figures; any of them may be left out.
-// A figure may carry a `title`, shown above its caption. `date` is when the project ran.
+// A figure may carry a `title`, shown above its caption. `date` is when the project ran. A section's `group`
+// `crop: true` trims a three-up row of photos to one shape so the titles line up (never use it on diagrams).
+// gathers consecutive sections under one heading (the old site's "Inspirations", "Design"), for the layouts that show it.
 // `video` is a YouTube id; when set, the case study opens on the embedded video instead of the cover.
 
 export const designProjects = [
@@ -25,6 +27,7 @@ export const designProjects = [
       {
         heading: 'The experience',
         cols: 3,
+        crop: true,
         figures: [
           { src: 'wish.jpg', caption: '1. Say your wish out loud.' },
           { src: 'tape.gif', caption: '2. Take the wish tape printed from your voice.' },
@@ -35,9 +38,10 @@ export const designProjects = [
         ],
       },
       {
-        heading: 'Why wishes',
-        text: ['The yearning for enchantment, in three observations.'],
+        heading: 'Yearning for enchantment',
+        group: 'Inspirations',
         cols: 3,
+        crop: true,
         figures: [
           { src: 'ritual.jpg', title: 'Rituals matter', caption: 'Pressure from work and life has people looking for a sense of occasion, small rituals that mark a moment.' },
           { src: 'shooting-star.jpg', title: 'Magic is rare', caption: 'We like to wish on shooting stars because those moments feel romantic and full of wonder.' },
@@ -45,8 +49,10 @@ export const designProjects = [
         ],
       },
       {
-        heading: 'Where it lives',
+        heading: 'Scenarios',
+        group: 'Inspirations',
         cols: 3,
+        crop: true,
         figures: [
           { src: 'exhibition.jpg', title: 'Exhibition hall' },
           { src: 'mall.jpg', title: 'Shopping mall' },
@@ -54,8 +60,10 @@ export const designProjects = [
         ],
       },
       {
-        heading: 'Who it is for',
+        heading: 'Target users',
+        group: 'Inspirations',
         cols: 3,
+        crop: true,
         figures: [
           { src: 'seniors.jpg', title: 'High school seniors', caption: 'Facing college and career choices, and looking for something inspiring to help them through an uncertain future.' },
           { src: 'romantics.jpg', title: 'Romantics', caption: 'They chase romance, passion and beauty, and want poetic, fantastical experiences that feed their imagination.' },
@@ -71,6 +79,7 @@ export const designProjects = [
       },
       {
         heading: 'Build',
+        group: 'Implementation',
         text: [
           'Hardware: a PC, a receipt printer, touch sensors on the tree, LED strips and a projector. Unity turns the voice into the printed tape; an Arduino drives the LED effects (twinkling and shooting stars).',
         ],
@@ -82,6 +91,7 @@ export const designProjects = [
       },
       {
         heading: 'Voice to colour, in Unity',
+        group: 'Implementation',
         items: [
           ['Record', 'A recorder class starts capturing as soon as someone speaks, through Unity’s Microphone.Start().'],
           ['Spectrum', 'AudioSource.GetSpectrumData() gives the frequency spectrum of the clip.'],
@@ -154,8 +164,9 @@ export const designProjects = [
         ],
       },
       {
-        heading: 'Who it is for',
+        heading: 'Target users',
         cols: 3,
+        crop: true,
         figures: [
           { src: 'children.jpg', title: 'Children (7–13)', caption: 'Early learners with some grounding already. The game feeds their curiosity about biology.' },
           { src: 'students.jpg', title: 'High school students', caption: 'Studying biology in depth. Playing builds strategic thinking and scientific literacy.' },
@@ -163,7 +174,8 @@ export const designProjects = [
         ],
       },
       {
-        heading: 'Inspiration: biology',
+        heading: 'Biology',
+        group: 'Inspirations',
         text: [
           'The mechanics come from how the body defends itself: non-specific immunity, the immune cells involved, and specific immunity.',
         ],
@@ -175,7 +187,8 @@ export const designProjects = [
         ],
       },
       {
-        heading: 'Inspiration: tower defense',
+        heading: 'Tower defense games',
+        group: 'Inspirations',
         text: ['The format borrows from tower-defense games, where you hold a fixed point by placing defenders along the enemy’s path.'],
         figures: [
           { src: 'kingdom-guard.jpg', title: 'Battle of the Kingdom Guard' },
@@ -184,6 +197,7 @@ export const designProjects = [
       },
       {
         heading: 'How it plays',
+        group: 'Design',
         items: [
           ['Play', 'Players print marker patterns and rearrange the defense towers by moving the paper around.'],
           ['Rules', 'The heart cannot move. If its health hits zero before the game ends, you lose; otherwise you win.'],
@@ -191,6 +205,8 @@ export const designProjects = [
       },
       {
         heading: 'Levels',
+        group: 'Design',
+        cols: 3,
         figures: [
           { src: 'level-1.gif', caption: 'Level 1: three viruses attack from the front.' },
           { src: 'level-2.gif', caption: 'Level 2: five viruses from the front, left and right.' },
@@ -199,6 +215,7 @@ export const designProjects = [
       },
       {
         heading: 'Characters',
+        group: 'Design',
         figures: [
           { src: 'heart.jpg', caption: 'Heart: the body you defend. Starts with 8 HP.' },
           { src: 'b-cell.jpg', caption: 'B cell (L1): fires one Y-shaped antibody per attack.' },
@@ -207,7 +224,7 @@ export const designProjects = [
         ],
       },
       {
-        heading: 'Build',
+        heading: 'Implementation',
         text: ['Built in Unity with AR image tracking and deployed to iOS through Xcode.'],
         figures: [
           { src: 'architecture.jpg', caption: 'Logic: the image tracker sets up a virus manager and the towers, which detect and attack each other.' },
