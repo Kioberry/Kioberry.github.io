@@ -1180,6 +1180,45 @@ main h2 {
   color: var(--accent);
 }
 
+/* every case-study image and card answers the pointer the way the project cards do: a small lift, the accent
+   border and its glow */
+.case-hero,
+.case-figs img,
+.case-items > div,
+.case-flow {
+  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1), border-color 0.25s, box-shadow 0.35s;
+}
+
+.case-hero:hover,
+.case-figs figure:hover img,
+.case-items > div:hover,
+.case-flow:hover {
+  border-color: var(--accent);
+  box-shadow: 0 14px 34px -14px var(--accent-dim);
+}
+
+.case-figs figure:hover img,
+.case-items > div:hover {
+  transform: translateY(-4px);
+}
+
+.case-hero:hover {
+  box-shadow: 0 40px 90px -40px var(--accent-dim), 0 0 0 1px var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .case-hero,
+  .case-figs img,
+  .case-items > div,
+  .case-flow {
+    transition: none;
+  }
+  .case-figs figure:hover img,
+  .case-items > div:hover {
+    transform: none;
+  }
+}
+
 /* --- layout: original (the old Wix site): centred group titles, accent subheads, three-up grids --- */
 
 .case-original {
@@ -1395,6 +1434,26 @@ main h2 {
   border-radius: 0;
 }
 
+/* the frame clips its image, so here the picture zooms inside it and the frame takes the glow */
+.case-immersive .case-figs figure {
+  transition: box-shadow 0.35s;
+}
+
+.case-immersive .case-figs figure:hover {
+  box-shadow: 0 0 0 1px var(--accent), 0 14px 34px -14px var(--accent-dim);
+}
+
+.case-immersive .case-figs figure:hover img {
+  transform: scale(1.04);
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .case-immersive .case-figs figure:hover img {
+    transform: none;
+  }
+}
+
 
 
 .case-immersive .case-figs figcaption {
@@ -1500,8 +1559,9 @@ main h2 {
 .case-chapters .case-figs-3 {
   display: flex;
   gap: clamp(14px, 1.6vw, 24px);
-  margin-top: 40px;
-  padding: 0 clamp(16px, 5vw, 72px) 18px;
+  /* the top padding leaves room for a hovered image to lift inside the scrolling strip */
+  margin-top: 32px;
+  padding: 8px clamp(16px, 5vw, 72px) 18px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scrollbar-width: thin;

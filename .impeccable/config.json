@@ -8,6 +8,15 @@
         "value": "tw-bounce",
         "createdAt": "2026-10-30T19:20:14.460Z",
         "reason": "Claude triage: keyframe name only; curve is ease-in-out with a 4px rise, the standard chat typing-dots indicator (pre-existing, committed in dcdfaac)"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "src/App.css"
+        ],
+        "createdAt": "2026-11-02T09:45:49.633Z",
+        "reason": "Claude: L1107 is .cf-step::before, a zero-size CSS border triangle drawing the flow arrowhead, not a card side border"
       }
     ]
   }
