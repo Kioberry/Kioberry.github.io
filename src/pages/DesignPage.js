@@ -115,10 +115,10 @@ function Figure({ p, f, style, onLoad }) {
 
 // A row of figures that all come out the same height, uncropped: each figure grows in proportion to its image's
 // aspect ratio (read when the image loads), so the row fills its width exactly.
-function JustifiedRow({ p, figures }) {
+function JustifiedRow({ p, figures, half }) {
   const [ratios, setRatios] = useState({});
   return (
-    <div className="case-figs case-figs-row">
+    <div className={half ? 'case-figs case-figs-row case-figs-half' : 'case-figs case-figs-row'}>
       {figures.map((f) => (
         <Figure
           key={f.src}
@@ -178,7 +178,7 @@ function Body({ p, s }) {
         </div>
       ) : (
         <>
-          {narrow.length > 0 && <JustifiedRow p={p} figures={narrow} key={narrow.map((f) => f.src).join()} />}
+          {narrow.length > 0 && <JustifiedRow p={p} figures={narrow} half={s.half} key={narrow.map((f) => f.src).join()} />}
           {wide.length > 0 && (
             <div className="case-figs">
               {wide.map((f) => (

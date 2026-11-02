@@ -1029,6 +1029,10 @@ main h2 {
   max-height: none;
 }
 
+.case-figs-half {
+  max-width: 50%;
+}
+
 .case-figs-row > figure:only-child {
   flex: none;
   max-width: 100%;
@@ -1570,6 +1574,9 @@ main h2 {
   }
   .case-figs-row {
     flex-direction: column;
+  }
+  .case-figs-half {
+    max-width: none;
   }
   .case-figs-row > figure {
     flex: none;

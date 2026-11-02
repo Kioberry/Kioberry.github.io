@@ -4,6 +4,7 @@
 // A figure may carry a `title`, shown above its caption. `date` is when the project ran. A section's `group`
 // `crop: true` trims a three-up row of photos to one shape so the titles line up (never use it on diagrams).
 // gathers consecutive sections under one heading (the old site's "Inspirations", "Design"), for the layouts that show it.
+// `half: true` shows a section's figure row at half the column width, left-aligned (phone screenshots).
 // `flow` draws a left-to-right pipeline: data and steps alternate, starting and ending with data.
 // `layout` picks the case-study layout (see LAYOUTS in DesignPage.js).
 // `video` is a YouTube id; when set, the case study opens on the embedded video instead of the cover.
@@ -269,6 +270,7 @@ export const designProjects = [
         text: [
           'A hybrid recommender. It starts knowledge-based, using each student’s profile (arrival time, budget, comfort) and class schedule alongside travel times, shared e-bike and bike availability, school-bus crowding and congestion data. Once there is enough history, collaborative filtering on similar students refines the suggestions. Every trip ends with a feedback prompt.',
         ],
+        half: true,
         figures: [
           { src: 'ar-nav.png', caption: 'AR indoor navigation for finding the classroom.' },
           { src: 'feedback.png', caption: 'Rating each recommendation feeds the next one.' },
