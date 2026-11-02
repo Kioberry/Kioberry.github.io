@@ -4,7 +4,7 @@
 
 export const person = {
   name: 'Astrid Xie',
-  nameZh: '谢婉蓉',
+  nameZh: '谢宛蓉',
   intro: "I'm Astrid, a developer, researcher, and creative builder.",
   location: 'Los Angeles, CA',
   email: 'wanrongxie7@gmail.com',

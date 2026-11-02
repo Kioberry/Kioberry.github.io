@@ -49,8 +49,8 @@ test('repeating a question is acknowledged instead of answered word for word', (
   expect(b.text).toMatch(/Still/);
 });
 
-test('admits being a twin and does not invent unknown facts', () => {
-  expect(respond('Are you a real person?', [], rng).text).toMatch(/digital twin/);
+test('admits being an AI and does not invent unknown facts', () => {
+  expect(respond('Are you a real person?', [], rng).text).toMatch(/AI version of Astrid/);
   const r = respond("What's your favorite pizza topping?", [], rng);
   expect(r.topic).toBe('fallback');
   expect(r.text).toMatch(/rather not make things up|outside what I know/);

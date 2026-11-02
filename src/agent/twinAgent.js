@@ -126,9 +126,9 @@ const INTENTS = [
     label: { en: 'who I am', zh: '我是谁' },
     say: ({ zh }) =>
       zh
-        ? ['我是婉蓉的数字分身，一个她自己写的小程序，知道她的项目和经历。', `我尽量用她的语气回答，重要的事情还是直接发邮件给真人吧：${person.email}`]
+        ? ['我是 AI 版的宛蓉，她自己做的，知道她的项目和经历。', `我尽量用她的语气回答，重要的事情还是直接发邮件给真人吧：${person.email}`]
         : [
-            "I'm Astrid's digital twin: a little program she wrote that knows about her work.",
+            "I'm the AI version of Astrid: she built me, and I know her work.",
             `I try to answer the way she would, but for anything important, email the real me at ${person.email}.`,
           ],
   },
@@ -140,7 +140,7 @@ const INTENTS = [
     say: ({ zh }) =>
       zh
         ? [
-            '我是 Claude，用婉蓉的身份在说话。',
+            '我是 Claude，用宛蓉的身份在说话。',
             '一个 Cloudflare Worker 把她的经历和笔记交给模型，再把回答一条条流式发回来，所以几乎什么问题都能聊。',
           ]
         : [
@@ -187,7 +187,7 @@ const INTENTS = [
     match: /^(hi|hey|hello|yo|hiya|good (morning|afternoon|evening))\b|^(你好|嗨|哈喽|您好)/i,
     label: { en: 'hi', zh: '打招呼' },
     say: ({ zh, rng, times }) => {
-      if (zh) return ['你好呀！', '我是婉蓉（的数字分身）。想聊项目、经历还是最近在忙什么都可以。'];
+      if (zh) return ['你好呀！', '我是宛蓉（的 AI 版本）。想聊项目、经历还是最近在忙什么都可以。'];
       if (times) return ['Hi again!', 'What else do you want to know?'];
       return [pick(['Hey, hi!', 'Hi there!', 'Hello!'], rng), "I'm Astrid (well, my twin). Ask me anything about my work, projects or what I'm up to."];
     },
@@ -512,7 +512,7 @@ export function splitQuestions(message) {
 
 function fallback({ zh, rng, times }) {
   const p = pick(featured, rng);
-  if (zh) return ['嗯……这个问题我答不太好。', '我只知道婉蓉的工作、项目和背景，不想乱编。', `要不要听听 ${p.title}，或者她最近在忙什么？`];
+  if (zh) return ['嗯……这个问题我答不太好。', '我只知道宛蓉的工作、项目和背景，不想乱编。', `要不要听听 ${p.title}，或者她最近在忙什么？`];
   if (times) return ["That one's outside what I know too, sorry!", `Ask me about my projects (${p.title} is a good one), my work, or how to reach me.`];
   return pick(
     [

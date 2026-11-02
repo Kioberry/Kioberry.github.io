@@ -9,7 +9,7 @@ import { DEFAULTS, extrudeShadow, lookFrom, sceneVars, triplet } from './sceneCo
 // Candidate home layouts. LabPage shows them side by side; HomePage renders the chosen one.
 const TWIN = `${process.env.PUBLIC_URL}/twin`;
 const media = { video: `${TWIN}/idle.mp4`, poster: `${TWIN}/portrait.png` };
-const LABEL = "ASCII portrait of Astrid's digital twin";
+const LABEL = "ASCII portrait of Astrid";
 
 // light directions (where the light comes from, screen space) per scene
 const FROM_HORIZON = [0, 1];

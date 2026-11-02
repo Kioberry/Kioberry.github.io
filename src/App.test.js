@@ -34,5 +34,5 @@ beforeAll(() => {
 test('renders the home page with suggested questions', () => {
   render(<App />);
   expect(screen.getByText(/favorite project/i)).toBeInTheDocument();
-  expect(screen.getByLabelText(/ask astrid's digital twin/i)).toBeInTheDocument();
+  expect(screen.getByLabelText(/ask astrid anything/i)).toBeInTheDocument();
 });

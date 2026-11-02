@@ -124,7 +124,7 @@ export default function TwinPanel({ chat, name = 'Astrid' }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={chat.phase === 'idle' ? `Ask about ${name}` : "Ask another, I'll get to it next"}
-            aria-label={`Ask ${name}'s digital twin`}
+            aria-label={`Ask ${name} anything`}
           />
           {input.trim() ? (
             <button type="submit" className="tw-mic" aria-label="Send">

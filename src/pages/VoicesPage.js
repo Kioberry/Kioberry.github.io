@@ -13,7 +13,7 @@ const CJK = /[一-鿿]/;
 
 const PRESETS = {
   en: "It won first place at USC Build4SC, and it's my favorite project I've done. Want to try the live version?",
-  zh: '嗨，我是 Astrid 的数字分身。Peeko 是我最喜欢的项目，在 USC Build4SC 拿了第一名，要不要试试线上版本？',
+  zh: '嗨，我是 AI 版的 Astrid。Peeko 是我最喜欢的项目，在 USC Build4SC 拿了第一名，要不要试试线上版本？',
 };
 
 // Deepgram's own descriptions (developers.deepgram.com/docs/tts-models); Workers AI offers all but selene.

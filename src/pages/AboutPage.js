@@ -13,7 +13,7 @@ export default function AboutPage() {
           ))}
         </ul>
         <p className="pb-more">
-          <a href="#/">Talk to my digital twin</a>
+          <a href="#/">Ask me anything</a>
         </p>
 
         <section id="education" className="pb-sec">
