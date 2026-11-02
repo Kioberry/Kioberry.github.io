@@ -691,19 +691,20 @@ main h2 {
    #/design/luminara?tune adjusts all of this live. */
 :root[data-palette='luminara'],
 [data-palette='luminara'] {
-  --ground: hsl(240 10% 2.5%);
-  --sheet: hsl(240 10% 7.5%);
+  --ground: hsl(220 25% 3.5%);
+  --sheet: hsl(220 25% 8.5%);
   --ink: #eef0ff;
   --soft: #cdd1f2;
   --muted: #9097c8;
   --rule: rgba(238, 240, 255, 0.12);
-  --accent: #a9b4ff;
-  --accent-dim: rgba(150, 140, 255, 0.4);
+  --accent: hsl(266 100% 83%);
+  --accent-dim: hsl(266 100% 83% / 0.35);
   --title: #f0eeff;
   --case-title-font: var(--serif);
+  --label-w: 210px;
   background:
-    radial-gradient(1200px 700px at 85% -10%, var(--glow-a, hsl(250 90% 65% / 0.1)), transparent 60%),
-    radial-gradient(900px 600px at -10% 40%, var(--glow-b, hsl(220 90% 60% / 0.06)), transparent 60%),
+    radial-gradient(1200px 700px at 85% -10%, var(--glow-a, hsl(284 90% 65% / 0.16)), transparent 60%),
+    radial-gradient(900px 600px at -10% 40%, var(--glow-b, hsl(254 90% 60% / 0.096)), transparent 60%),
     var(--ground);
 }
 
