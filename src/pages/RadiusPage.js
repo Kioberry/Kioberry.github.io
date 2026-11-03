@@ -26,7 +26,7 @@ export default function RadiusPage() {
         <input type="range" min="0" max="32" step="1" value={r} onChange={(e) => setR(Number(e.target.value))} aria-label="Corner radius" />
         <div className="chips">
           {PRESETS.map((v) => (
-            <button key={v} className="chip" aria-selected={r === v} onClick={() => setR(v)}>
+            <button key={v} className="chip" aria-pressed={r === v} onClick={() => setR(v)}>
               {v}
             </button>
           ))}

@@ -22,6 +22,8 @@
   --pixel: 'Silkscreen', monospace;
   --term: 'VT323', var(--mono);
   --wrap: 1180px;
+  /* height of the sticky site header; sticky headings sit below it */
+  --head-h: 70px;
   /* corner radius for cards, thumbnails and case-study images; tune it live at #/radius */
   --radius: 6px;
 }
@@ -73,15 +75,27 @@ button {
 
 /* ---------- header ---------- */
 
+/* The header spans the viewport so its backdrop covers what scrolls under it; --gutter keeps the links and
+   the theme switch inside the --wrap column. It sticks to the top and gains a backdrop once the page scrolls. */
 .site {
-  position: relative;
+  --gutter: max(0px, (100% - var(--wrap)) / 2);
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   justify-content: center;
   align-items: center;
-  max-width: var(--wrap);
   width: 100%;
-  margin: 0 auto;
-  padding: 22px clamp(56px, 4vw, 52px);
+  padding: 22px calc(var(--gutter) + 56px);
+  border-bottom: 1px solid transparent;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.site-stuck {
+  background: color-mix(in srgb, var(--ground) 82%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-bottom-color: var(--rule);
 }
 
 .site nav {
@@ -102,7 +116,7 @@ button {
 
 .themeb {
   position: absolute;
-  right: clamp(16px, 4vw, 52px);
+  right: calc(var(--gutter) + clamp(16px, 4vw, 52px));
   display: flex;
   align-items: center;
   gap: 8px;
@@ -347,7 +361,7 @@ main h2 {
 
 .pb-sec > h2 {
   position: sticky;
-  top: 24px;
+  top: calc(var(--head-h) + 24px);
   align-self: start;
   padding-top: 13px;
 }
@@ -517,7 +531,8 @@ main h2 {
 }
 
 .chip:hover:not(:disabled),
-.chip[aria-selected='true'] {
+.chip[aria-selected='true'],
+.chip[aria-pressed='true'] {
   color: var(--accent);
   border-color: var(--accent);
 }
@@ -900,7 +915,7 @@ main h2 {
 
 .case-sec h2 {
   position: sticky;
-  top: 28px;
+  top: calc(var(--head-h) + 28px);
   align-self: start;
   margin: 0;
   padding-top: 14px;
@@ -1656,11 +1671,9 @@ main h2 {
 
 /* on the home page the nav floats over the scene, and the scene fills the viewport */
 .site-over {
-  position: absolute;
-  top: 0;
+  position: fixed;
   left: 0;
   right: 0;
-  z-index: 10;
 }
 
 .home .cx {
@@ -2804,7 +2817,7 @@ main h2 {
 /* #/radius (temporary) */
 .radius-bar {
   position: sticky;
-  top: 0;
+  top: var(--head-h);
   z-index: 5;
   display: flex;
   align-items: center;
