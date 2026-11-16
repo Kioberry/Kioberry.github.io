@@ -317,7 +317,14 @@ export default function AsciiFigure({ video, poster, font = 'Fira Code', fps = 3
     const onLeave = () => {
       pointer = null;
     };
+    // a finger has no hover: it scrambles while it touches, then the glyphs settle once it lifts
+    const onUp = (e) => {
+      if (e.pointerType !== 'mouse') pointer = null;
+    };
     window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerdown', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
     document.documentElement.addEventListener('pointerleave', onLeave);
 
     const ro = new ResizeObserver(() => {
@@ -349,6 +356,9 @@ export default function AsciiFigure({ video, poster, font = 'Fira Code', fps = 3
       ro.disconnect();
       io.disconnect();
       window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerdown', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
       document.documentElement.removeEventListener('pointerleave', onLeave);
       vid.pause();
       vid.removeAttribute('src');
