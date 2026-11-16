@@ -18,6 +18,9 @@ export const RAMPS = {
 const SCRAMBLE = '!<>-_\\/[]{}=+*^?#%@&$01';
 const MOUTH = { cx: 0.5, cy: 0.49, w: 0.06, h: 0.05 }; // fractions of the source, as in AsciiPortrait
 const BACKDROP = 0.09; // luminance below this is the black backdrop (the video's corners sit near 0.07)
+// narrowest a glyph cell may get, in CSS px: below that the strokes blur into the background and the figure
+// reads dim (a phone fits fewer, larger glyphs instead of the desktop's count)
+const MIN_CELL = 4;
 const LEVELS = 5; // tone steps in the colour ramp; each also has 3 rim steps
 
 // Bounding box of the lit subject, as fractions of the source, padded a little at the sides.
@@ -118,7 +121,7 @@ export default function AsciiFigure({ video, poster, font = 'Fira Code', fps = 3
       if (!crop) return;
       const W = box.clientWidth;
       fs = W / (crop.cols * aspect);
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
       canvas.width = Math.round(W * dpr);
       canvas.height = Math.round(crop.rows * fs * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -147,7 +150,7 @@ export default function AsciiFigure({ video, poster, font = 'Fira Code', fps = 3
 
     const draw = (source, w, h) => {
       const lk = lookRef.current;
-      fit(source, w, h, lk.cols);
+      fit(source, w, h, Math.min(lk.cols, Math.max(48, Math.floor(box.clientWidth / MIN_CELL))));
       if (!pal || pal.key !== JSON.stringify(lk.colors)) pal = buildPalette(lk.colors);
       const ramp = RAMPS[lk.ramp] || RAMPS.classic;
       const top = ramp.length - 1;

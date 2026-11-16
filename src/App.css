@@ -2968,8 +2968,10 @@ main h2 {
     width: 100%;
     height: auto;
   }
+  /* the scanlines and grain stay on the scene but not on the conversation, which a phone shows small */
   .cx-descent .cx-dock {
     order: 2;
+    z-index: 5;
   }
 }
 

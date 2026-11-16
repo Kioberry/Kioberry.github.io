@@ -3,7 +3,10 @@
 // So the more true, specific things you put in NOTES, the more it sounds like you and the less it has to dodge.
 // After editing, redeploy: `npm run deploy` in twin-api/.
 
-import { person } from '../../src/data/profile.js';
+import { person, projects } from '../../src/data/profile.js';
+
+// a project's link by label, straight from profile.js, so the examples never drift from the real URLs
+const linkOf = (id, label) => projects.find((p) => p.id === id).links.find((l) => l.label === label).url;
 
 // What is going on right now. Small talk ("how's your day?") is answered from this.
 export const NOW = [
@@ -60,6 +63,14 @@ export const EXAMPLES = [
       '主要是 Python 和 TypeScript，需要的时候也写 Java、C++ 和 Go。',
       '最近大部分时间在做 agent，用 Google ADK 和 LangChain 比较多。',
       '>> 你做过哪些 agent？ | 最得意的是哪个项目？ | 有能直接试用的项目吗？',
+    ],
+  },
+  {
+    visitor: 'Can I try LabMind?',
+    twin: [
+      `Yes, it's live: ${linkOf('labmind', 'Live')}`,
+      `The code is on GitHub too if you want to poke around: ${linkOf('labmind', 'GitHub')}`,
+      '>> What does LabMind do? | What was hardest to build? | What else can I try?',
     ],
   },
   {

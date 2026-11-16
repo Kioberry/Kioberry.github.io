@@ -13,6 +13,37 @@ const VOICE_WAIT = 8000; // longest a sentence's voice may take to arrive; after
 const reduceMotion =
   typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+// Called from the tap that turns conversation mode on, because iOS Safari only lets a page start sound inside a
+// user gesture. It asks for the "playback" audio session (Safari 17+), so the ring/silent switch doesn't mute the
+// voice; starts the AudioContext with a moment of silence; and says an empty sentence so the browser's own voice,
+// the fallback when the twin's voice fails, may speak later too.
+// resume() returns a promise in current browsers, nothing in older WebKit
+const wake = (ctx) => {
+  if (ctx && ctx.state !== 'running') Promise.resolve(ctx.resume?.()).catch(() => {});
+};
+
+function unlockAudio(ctxRef) {
+  try {
+    if (navigator.audioSession) navigator.audioSession.type = 'playback';
+  } catch {}
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (AudioCtx) {
+    const ctx = (ctxRef.current = ctxRef.current || new AudioCtx());
+    wake(ctx);
+    try {
+      const src = ctx.createBufferSource();
+      src.buffer = ctx.createBuffer(1, 1, 22050);
+      src.connect(ctx.destination);
+      src.start(0);
+    } catch {}
+  }
+  if (canSpeak) {
+    const u = new SpeechSynthesisUtterance('');
+    u.volume = 0;
+    window.speechSynthesis.speak(u);
+  }
+}
+
 // Conversation state shared by every home layout.
 //
 // The twin answers like a person in a chat:
@@ -178,6 +209,8 @@ export default function useTwinChat({ speaker } = {}) {
       .then((s) => {
         if (!live) return;
         spendVoice(s.ms);
+        // iOS suspends the context when the page is backgrounded or a call comes in
+        wake(audioCtx.current);
         const src = audioCtx.current.createBufferSource();
         src.buffer = s.audio;
         src.connect(audioCtx.current.destination);
@@ -249,13 +282,15 @@ export default function useTwinChat({ speaker } = {}) {
       const q = question.trim();
       if (!q) return;
       setInput('');
+      // a tap on a question is a gesture too: wake the voice up again if iOS put it to sleep meanwhile
+      if (voice) wake(audioCtx.current);
       if (phase !== 'idle') {
         setQueue((qs) => (qs.includes(q) || q === asking ? qs : [...qs, q]));
         return;
       }
       run(q);
     },
-    [phase, run, asking]
+    [phase, run, asking, voice]
   );
 
   // answer queued questions one after another, with a small breath in between
@@ -337,11 +372,7 @@ export default function useTwinChat({ speaker } = {}) {
     shuffleFollowups,
     voice,
     toggleVoice: () => {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!voice && AudioCtx) {
-        audioCtx.current = audioCtx.current || new AudioCtx();
-        audioCtx.current.resume();
-      }
+      if (!voice) unlockAudio(audioCtx);
       setVoice((v) => !v);
     },
     listening,
