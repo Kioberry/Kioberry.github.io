@@ -14,6 +14,10 @@ AURA_DAILY_CHARS = "3300"
 CARTESIA_MODEL = "sonic-3.6"
 MODEL = "claude-haiku-5-5"
 EFFORT = "low"
+# Questions the model answers a day (UTC): per visitor IP, and for the whole site. Past either, the site answers
+# from its built-in rules. 300 questions on Haiku is about $0.12.
+CHAT_DAILY_PER_IP = "30"
+CHAT_DAILY_TOTAL = "300"
 # Origins allowed to call the API: the live site and `npm start`.
 ALLOWED_ORIGINS = "https://kioberry.github.io,https://astridxie.github.io,http://localhost:3000"
 
@@ -27,9 +31,18 @@ remote = true
 name = "TTS_BUDGET"
 class_name = "TtsBudget"
 
+# Today's questions, per visitor and in total (src/budget.js, src/quota.js).
+[[durable_objects.bindings]]
+name = "CHAT_BUDGET"
+class_name = "ChatBudget"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["TtsBudget"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["ChatBudget"]
 
 # 20 questions a minute per visitor IP.
 [[ratelimits]]

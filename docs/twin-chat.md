@@ -25,8 +25,9 @@ browser (useTwinChat) --POST {query, messages}--> twin-api (Cloudflare Worker) -
   a story from a project), the more human it sounds.
 * `twin-api/src/prompt.js`: the system prompt (voice, small talk, honesty, the hidden `>>` follow-up line).
 * `twin-api/src/index.js`: the Worker. It keeps the API key server-side, allows only your site's origins,
-  limits each IP to 20 questions a minute, caps question and history length, and streams each bubble as
-  soon as the model finishes the line.
+  limits each IP to 20 questions a minute and 30 a day and the whole site to 300 a day (`CHAT_DAILY_PER_IP`,
+  `CHAT_DAILY_TOTAL` in `wrangler.toml`), caps question and history length, and streams each bubble as soon as
+  the model finishes the line.
 * `src/agent/twinStream.js`: the wire format, shared by both sides (tested).
 * The page still paces the reveal like a person, and **falls back to the rule-based twin** if the API is down,
   rate-limited or not configured. Without `REACT_APP_TWIN_API_URL` the site behaves exactly as before.

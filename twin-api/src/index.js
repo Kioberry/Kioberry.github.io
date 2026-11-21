@@ -5,19 +5,18 @@
 // POST /voice-lab { engine, speaker, text }       ->  a voice sample for #/voices, only under `npm run voices` (voiceLab.js)
 //
 // The API key stays here, never in the browser. Only the site's own origins may call it (ALLOWED_ORIGINS), each
-// visitor IP gets LIMITER's quota, and questions and history are capped, so a stranger can't run up the bill.
+// visitor IP gets LIMITER's questions a minute and CHAT_DAILY_PER_IP a day, the whole site gets CHAT_DAILY_TOTAL a
+// day, and questions and history are capped (messages.js), so a stranger can't run up the bill.
 
 import Anthropic from '@anthropic-ai/sdk';
 import { createBubbler, sse } from '../../src/agent/twinStream.js';
+import { toMessages } from './messages.js';
 import { systemPrompt } from './prompt.js';
 import { speak } from './tts.js';
 import { voiceLab } from './voiceLab.js';
 
-export { TtsBudget } from './budget.js';
+export { ChatBudget, TtsBudget } from './budget.js';
 
-const MAX_QUESTION = 600; // characters
-const MAX_HISTORY = 12; // earlier messages kept (six exchanges)
-const MAX_TURN = 1500; // characters per earlier message
 const OFF_LIMITS = "Hmm, I'd rather not get into that one. Ask me about my projects or my work?";
 
 // Browsers enforce this; the rate limit covers everything else.
@@ -34,16 +33,13 @@ function corsHeaders(request, env) {
   };
 }
 
-// The visitor's recent history plus the new question, in Messages API shape.
-export function toMessages(body) {
-  const query = typeof body?.query === 'string' ? body.query.trim().slice(0, MAX_QUESTION) : '';
-  if (!query) return null;
-  const history = (Array.isArray(body.messages) ? body.messages : [])
-    .filter((m) => (m?.role === 'user' || m?.role === 'assistant') && typeof m.content === 'string' && m.content.trim())
-    .slice(-MAX_HISTORY)
-    .map((m) => ({ role: m.role, content: m.content.slice(0, MAX_TURN) }));
-  while (history.length && history[0].role !== 'user') history.shift();
-  return [...history, { role: 'user', content: query }];
+// Whether this visitor may ask one more question today (ChatBudget, budget.js). No budget bound: no model, and
+// the site answers from its built-in rules.
+function chatBudget(env, ip) {
+  const perIp = Number(env.CHAT_DAILY_PER_IP) || 0;
+  const total = Number(env.CHAT_DAILY_TOTAL) || 0;
+  if (!env.CHAT_BUDGET || !perIp || !total) return false;
+  return env.CHAT_BUDGET.get(env.CHAT_BUDGET.idFromName('chat')).take(ip, perIp, total);
 }
 
 // Streams the model's reply into `writable` as bubble events, then follow-ups, then done.
@@ -133,6 +129,7 @@ export default {
     }
     const messages = toMessages(await request.json().catch(() => null));
     if (!messages) return new Response('Bad request', { status: 400, headers });
+    if (!(await chatBudget(env, ip))) return new Response('No more questions today', { status: 429, headers });
     const { readable, writable } = new TransformStream();
     ctx.waitUntil(answer(env, messages, writable));
     return new Response(readable, { headers: { ...headers, 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' } });
