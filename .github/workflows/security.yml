@@ -1,0 +1,63 @@
+# Code and dependency scanning for the site and the twin's Worker: on every push and pull request to main, and
+# weekly so an advisory published after the last push still shows up.
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '23 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: github/codeql-action/init@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4
+        with:
+          languages: javascript-typescript
+      - uses: github/codeql-action/analyze@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4
+
+  audit:
+    name: npm audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      # The Worker is the code that holds the API key and takes requests from strangers: a high or critical
+      # advisory in what it depends on fails the run.
+      - name: Worker dependencies
+        working-directory: twin-api
+        run: npm audit --audit-level=high
+      # The site's advisories all come in through react-scripts, which builds and tests the site and is not in what
+      # the browser gets (react, react-dom and web-vitals are, and are clean). Failing on them would fail every run
+      # without pointing at anything fixable, so they are listed, not enforced.
+      - name: Site dependencies (listed, not enforced)
+        run: npm audit --audit-level=high || true
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Includes what a request may put in front of the model (messages.test.js) and the daily limits (quota.test.js).
+      - run: npm test -- --watchAll=false
+        env:
+          CI: true
