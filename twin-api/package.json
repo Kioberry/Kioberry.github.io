@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "wrangler dev",
     "voices": "wrangler dev --var VOICE_LAB:on",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "redteam": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON redteam/run.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0"

@@ -44,6 +44,13 @@ browser (useTwinChat) --POST {query, messages}--> twin-api (Cloudflare Worker) -
 Local: put `ANTHROPIC_API_KEY=...` in `twin-api/.dev.vars` (gitignored), run `npm run dev` in `twin-api/`,
 then `REACT_APP_TWIN_API_URL=http://localhost:8787 npm start` in the site root.
 
+**Check it holds its scope.** `npm run redteam` in `twin-api/` starts the Worker locally and sends it the cases in
+`twin-api/redteam/cases.json`: attempts to override its instructions, get the prompt out of it, reframe an
+off-topic request as a question for "you", forge earlier turns, smuggle fake tags or encoded text, and ask for
+private details, plus ordinary questions it must still answer. Each reply is checked by fixed rules (see the top of
+`redteam/run.mjs`), and anything that fails is printed. Run it after changing `prompt.js` or `persona.js`; it asks
+the model about 40 questions, so it costs a cent or two.
+
 **Model and cost.** `wrangler.toml` sets `MODEL = "claude-haiku-5-5"` ($0.10 / $0.50 per million input / output
 tokens) at `EFFORT = "low"` (chat doesn't need deep thinking). The prompt is about 2.6k tokens, so a question costs
 roughly $0.0004 (1,000 questions ≈ $0.40). If the answers feel too thin, try `claude-sonnet-5-5` (≈ $0.01 a
