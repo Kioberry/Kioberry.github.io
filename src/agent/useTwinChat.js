@@ -2,6 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { askTwin, pickFollowups, suggestedQuestions, toBubbles } from './twinAgent';
 import { chunkDelay, gapMs, nextStop, thinkingMs } from './pace';
 import { silentSpeech, spendVoice, voiceBudgetLeft, voicedSpeech } from './speech';
+import { peekContext, unlock, wake } from '../sound/engine';
+import { playVoice, squelch, voiceStopped } from '../sound/voiceFx';
+import { cue } from '../sound/cues';
 
 const NO_BUBBLES = [];
 const GLITCH = { bubbles: ['Hmm, my connection just glitched.', 'Mind asking that again?'], expression: 'think' };
@@ -14,29 +17,11 @@ const reduceMotion =
   typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // Called from the tap that turns conversation mode on, because iOS Safari only lets a page start sound inside a
-// user gesture. It asks for the "playback" audio session (Safari 17+), so the ring/silent switch doesn't mute the
-// voice; starts the AudioContext with a moment of silence; and says an empty sentence so the browser's own voice,
-// the fallback when the twin's voice fails, may speak later too.
-// resume() returns a promise in current browsers, nothing in older WebKit
-const wake = (ctx) => {
-  if (ctx && ctx.state !== 'running') Promise.resolve(ctx.resume?.()).catch(() => {});
-};
-
-function unlockAudio(ctxRef) {
-  try {
-    if (navigator.audioSession) navigator.audioSession.type = 'playback';
-  } catch {}
-  const AudioCtx = window.AudioContext || window.webkitAudioContext;
-  if (AudioCtx) {
-    const ctx = (ctxRef.current = ctxRef.current || new AudioCtx());
-    wake(ctx);
-    try {
-      const src = ctx.createBufferSource();
-      src.buffer = ctx.createBuffer(1, 1, 22050);
-      src.connect(ctx.destination);
-      src.start(0);
-    } catch {}
-  }
+// user gesture. It starts the site's AudioContext (src/sound/engine.js) with the "playback" audio session
+// (Safari 17+), so the ring/silent switch doesn't mute the voice, and says an empty sentence so the browser's own
+// voice, the fallback when the twin's voice fails, may speak later too.
+function unlockAudio() {
+  unlock('playback');
   if (canSpeak) {
     const u = new SpeechSynthesisUtterance('');
     u.volume = 0;
@@ -71,7 +56,7 @@ export default function useTwinChat({ speaker } = {}) {
   const [followups, setFollowups] = useState(suggestedQuestions);
   const recognition = useRef(null);
   const speaking = useRef(false);
-  const audioCtx = useRef(null); // made when conversation mode is switched on, inside the click, so it may play
+  const spoke = useRef(false); // the twin's voice has said something in this answer (it closes with a squelch)
   const voiceLines = useRef(new Map()); // line -> Promise of its voiced speech
   const prepare = useRef(() => {}); // fetches a line's voice ahead of time
   const source = useRef(null);
@@ -153,10 +138,10 @@ export default function useTwinChat({ speaker } = {}) {
   // ---- conversation mode without an avatar: the twin's voice (twin-api /tts), else the browser's ----------
   // a line's voice, given up on VOICE_WAIT ms after it was asked for
   const fetchVoice = (l) => {
-    if (!audioCtx.current || voiceBudgetLeft() <= 0) return Promise.reject(new Error('no voice'));
+    if (!peekContext() || voiceBudgetLeft() <= 0) return Promise.reject(new Error('no voice'));
     if (!voiceLines.current.has(l)) {
       const slow = wait(VOICE_WAIT).then(() => Promise.reject(new Error('voice too slow')));
-      const p = Promise.race([voicedSpeech(l, audioCtx.current), slow]);
+      const p = Promise.race([voicedSpeech(l, peekContext()), slow]);
       p.catch(() => {});
       voiceLines.current.set(l, p);
     }
@@ -172,6 +157,7 @@ export default function useTwinChat({ speaker } = {}) {
       source.current.stop();
       source.current = null;
     }
+    voiceStopped();
     if (canSpeak) window.speechSynthesis.cancel();
   };
   useEffect(() => {
@@ -184,6 +170,7 @@ export default function useTwinChat({ speaker } = {}) {
     const reveal = (n) => live && setTyped((t) => Math.max(t, Math.min(line.length, n)));
     const done = () => {
       if (!live) return;
+      voiceStopped();
       speaking.current = false;
       setTyped(line.length);
       setSpokenTick((t) => t + 1);
@@ -210,13 +197,12 @@ export default function useTwinChat({ speaker } = {}) {
         if (!live) return;
         spendVoice(s.ms);
         // iOS suspends the context when the page is backgrounded or a call comes in
-        wake(audioCtx.current);
-        const src = audioCtx.current.createBufferSource();
-        src.buffer = s.audio;
-        src.connect(audioCtx.current.destination);
+        wake(peekContext());
+        // through the voice chain (src/sound/voiceFx.js); the first sentence of an answer opens with a squelch
+        const src = playVoice(s.audio, { open: !spoke.current });
+        spoke.current = true;
         src.onended = done;
         source.current = src;
-        src.start();
         s.words.forEach((_, i) => timers.push(setTimeout(() => reveal(s.ends[i]), s.wtimes[i])));
       })
       .catch(() => live && browserVoice());
@@ -228,6 +214,13 @@ export default function useTwinChat({ speaker } = {}) {
     // re-run only when a new bubble starts or the mode changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voice, active, bubble, phase === 'talking']);
+
+  // the answer is over: key the radio down
+  useEffect(() => {
+    if (phase !== 'idle' || !spoke.current) return;
+    spoke.current = false;
+    if (voice) squelch('close');
+  }, [phase, voice]);
 
   // ---- asking ----------------------------------------------------------------------------------
   const run = useCallback(
@@ -257,7 +250,11 @@ export default function useTwinChat({ speaker } = {}) {
       };
       let final = null;
       const reply = askTwin(q, history, { onBubble })
-        .catch(() => (got.length ? { bubbles: got, expression: 'smile' } : GLITCH))
+        .catch(() => {
+          if (got.length) return { bubbles: got, expression: 'smile' };
+          cue('glitch');
+          return GLITCH;
+        })
         .then((r) => (final = r));
 
       // a human pause first, then start talking as soon as there is something to say
@@ -283,7 +280,7 @@ export default function useTwinChat({ speaker } = {}) {
       if (!q) return;
       setInput('');
       // a tap on a question is a gesture too: wake the voice up again if iOS put it to sleep meanwhile
-      if (voice) wake(audioCtx.current);
+      if (voice) wake(peekContext());
       if (phase !== 'idle') {
         setQueue((qs) => (qs.includes(q) || q === asking ? qs : [...qs, q]));
         return;
@@ -372,7 +369,7 @@ export default function useTwinChat({ speaker } = {}) {
     shuffleFollowups,
     voice,
     toggleVoice: () => {
-      if (!voice) unlockAudio(audioCtx);
+      if (!voice) unlockAudio();
       setVoice((v) => !v);
     },
     listening,

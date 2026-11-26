@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { toneMap } from './useMediaFrames';
 import { hexRgb, mixRgb } from './sceneConfig';
+import { voiceLevel } from '../sound/voiceFx';
+import { disturb } from '../sound/ambient';
 
 // The twin as lit ASCII on a canvas. Unlike AsciiPortrait's fixed crop, the grid is fitted to her
 // silhouette (found in each source). Glyphs are coloured along a shadow → mid → highlight ramp, the edge
@@ -116,6 +118,9 @@ export default function AsciiFigure({ video, poster, font = 'Fira Code', fps = 3
     let raf;
     let last = 0;
     let visible = true;
+    let motion = 0; // how far the pointer has moved over the figure lately, in px: drives the ambient static
+    let voice = 0; // the twin's voice level, smoothed
+    let shownVoice = -1;
 
     const layout = () => {
       if (!crop) return;
@@ -220,6 +225,8 @@ export default function AsciiFigure({ video, poster, font = 'Fira Code', fps = 3
         x1: Math.round((((MOUTH.cx + MOUTH.w / 2) * crop.w - sx) / sw) * cols),
         y0: Math.round((((MOUTH.cy - MOUTH.h / 2) * crop.h - sy) / sh) * rows),
         y1: Math.round((((MOUTH.cy + MOUTH.h / 2) * crop.h - sy) / sh) * rows),
+        p: voice > 0.02 ? 0.1 + 0.8 * voice : 0.4,
+        spread: voice > 0.02 ? 2 + voice * 4 : 3,
       };
       const ln = Math.hypot(lk.light[0], lk.light[1]) || 1;
       const lx = lk.light[0] / ln;
@@ -244,8 +251,9 @@ export default function AsciiFigure({ video, poster, font = 'Fira Code', fps = 3
             const facing = Math.max(0, -(nx * lx + ny * ly) / (Math.hypot(nx, ny) || 1));
             rim = Math.max(0, 1 - (d - 1) / 3.5) * (0.3 + 0.7 * facing) * lk.rim;
             if (rim > 0.5) idx = Math.max(idx, rimFloor);
-            if (mouth && y >= mouth.y0 && y <= mouth.y1 && x >= mouth.x0 && x <= mouth.x1 && Math.random() < 0.4) {
-              idx = Math.max(1, Math.min(top, idx + Math.round((Math.random() - 0.5) * 3)));
+            // the mouth moves with the voice when there is one to listen to, else at random while the words appear
+            if (mouth && y >= mouth.y0 && y <= mouth.y1 && x >= mouth.x0 && x <= mouth.x1 && Math.random() < mouth.p) {
+              idx = Math.max(1, Math.min(top, idx + Math.round((Math.random() - 0.5) * mouth.spread)));
             }
           }
           const r = rim > 0.6 ? 2 : rim > 0.25 ? 1 : 0;
@@ -308,6 +316,15 @@ export default function AsciiFigure({ video, poster, font = 'Fira Code', fps = 3
       raf = requestAnimationFrame(frame);
       if (!ready || now - last < 1000 / fps || document.hidden || !visible) return;
       last = now;
+      // sound (src/sound/): the pointer's scrambling hisses in the ambient bed, the voice lights the figure
+      disturb(Math.min(1, motion / 60));
+      motion *= 0.6;
+      voice += (voiceLevel() - voice) * 0.5;
+      const v = Math.round(voice * 20) / 20;
+      if (v !== shownVoice) {
+        shownVoice = v;
+        box.style.setProperty('--voice', v);
+      }
       drawCurrent();
     };
 
@@ -315,6 +332,9 @@ export default function AsciiFigure({ video, poster, font = 'Fira Code', fps = 3
     const onMove = (e) => {
       const r = box.getBoundingClientRect();
       pointer = { x: e.clientX - r.left, y: e.clientY - r.top };
+      if (pointer.x >= 0 && pointer.y >= 0 && pointer.x <= r.width && pointer.y <= r.height) {
+        motion += Math.hypot(pointer.x - lastPointer.x, pointer.y - lastPointer.y);
+      }
       lastPointer = pointer;
     };
     const onLeave = () => {

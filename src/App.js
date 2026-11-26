@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './App.css';
-import SiteHeader from './components/SiteHeader';
+import SiteHeader, { OVERLAY } from './components/SiteHeader';
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import ProjectsPage from './pages/ProjectsPage';
@@ -13,6 +13,10 @@ import VoicesPage from './pages/VoicesPage';
 import RadiusPage from './pages/RadiusPage';
 import { person } from './data/profile';
 import { THEME_IDS } from './components/sceneConfig';
+import { useUiSounds } from './sound/useSound';
+import { cue } from './sound/cues';
+import { setScene } from './sound/engine';
+import { setAmbientTheme } from './sound/ambient';
 
 // Hash routing keeps GitHub Pages happy (no server rewrites needed).
 const routes = {
@@ -64,16 +68,33 @@ function useSiteTheme() {
   return [theme, next];
 }
 
+// The site's sounds (src/sound/): hovers and clicks everywhere, a sound when the page or the theme changes, and
+// the ambient bed, full under the home scene and faint behind the reading pages. All silent until sound is on.
+function useSiteSounds(path, theme) {
+  useUiSounds();
+  const seen = useRef({ path, theme });
+  useEffect(() => {
+    setScene(OVERLAY.includes(path));
+    if (seen.current.path !== path) cue('nav');
+    seen.current.path = path;
+  }, [path]);
+  useEffect(() => {
+    setAmbientTheme(theme);
+    if (seen.current.theme !== theme) cue('theme', theme);
+    seen.current.theme = theme;
+  }, [theme]);
+}
+
 export default function App() {
   const path = useHashPath();
   const [theme, nextTheme] = useSiteTheme();
+  useSiteSounds(path, theme);
   // #/design/<id> is a case study inside the design page
   const Page = routes[path] || (path.startsWith('/design/') ? DesignPage : HomePage);
   return (
     <>
       <SiteHeader path={path} theme={theme} onTheme={nextTheme} />
-      <Page theme={theme} path={path} />
-      <footer className="pfoot">
+      <Page theme={theme} path={path} />      <footer className="pfoot">
         <span>© {new Date().getFullYear()} {person.name}</span>
         <span className="pfoot-links">
           <a href={`mailto:${person.email}`}>Email</a>

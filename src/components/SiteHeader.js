@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { THEMES } from './sceneConfig';
+import { toggleSound, useSoundEnabled } from '../sound/useSound';
 
 const links = [
   { path: '/', label: 'Home' },
@@ -10,7 +11,32 @@ const links = [
 ];
 
 // full-bleed scenes the nav floats over
-const OVERLAY = ['/', '/playground'];
+export const OVERLAY = ['/', '/playground'];
+
+// Sound is off until a visitor turns it on; the choice is remembered in this browser (src/sound/engine.js).
+function SoundSwitch() {
+  const on = useSoundEnabled();
+  return (
+    <button
+      type="button"
+      className={`soundb ${on ? 'is-on' : ''}`}
+      onClick={toggleSound}
+      aria-pressed={on}
+      aria-label="Sound"
+      title={on ? 'Sound on' : 'Sound off'}
+      data-sound-skip
+      data-sound-toggle
+    >
+      <span className="soundb-bars" aria-hidden="true">
+        <i />
+        <i />
+        <i />
+        <i />
+      </span>
+      <span className="soundb-label">{on ? 'Sound' : 'Muted'}</span>
+    </button>
+  );
+}
 
 // The whole site shares the home scene's palette; the switch cycles the themes in sceneConfig.js.
 export default function SiteHeader({ path, theme, onTheme }) {
@@ -33,10 +59,13 @@ export default function SiteHeader({ path, theme, onTheme }) {
           </a>
         ))}
       </nav>
-      <button type="button" className="themeb" onClick={onTheme} aria-label={`Switch theme (now ${current.label})`}>
-        <i style={{ background: current.colors.accent }} aria-hidden="true" />
-        <span>{current.label}</span>
-      </button>
+      <div className="site-tools">
+        <SoundSwitch />
+        <button type="button" className="themeb" onClick={onTheme} aria-label={`Switch theme (now ${current.label})`} data-sound-skip>
+          <i style={{ background: current.colors.accent }} aria-hidden="true" />
+          <span>{current.label}</span>
+        </button>
+      </div>
     </header>
   );
 }
